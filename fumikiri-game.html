@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ふみきりゲーム 🚂</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #87CEEB;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  #score-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.85);
+    font-size: 1.3rem;
+    font-weight: bold;
+    z-index: 100;
+  }
+
+  #game-wrap {
+    position: relative;
+    width: 100vw;
+    max-width: 480px;
+    margin-top: 50px;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  #btn-area {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  #btn-fumikiri {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 6px solid #c0392b;
+    background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(192,57,43,0.5);
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    line-height: 1.3;
+  }
+  #btn-fumikiri:active, #btn-fumikiri.pressed {
+    transform: scale(0.93);
+    box-shadow: 0 2px 8px rgba(192,57,43,0.4);
+  }
+  #btn-fumikiri.down {
+    background: radial-gradient(circle at 35% 35%, #a8e063, #27ae60);
+    border-color: #27ae60;
+    box-shadow: 0 6px 20px rgba(39,174,96,0.5);
+  }
+
+  #message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 24px 32px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200;
+    pointer-events: none;
+  }
+  #message.show { transform: translate(-50%, -50%) scale(1); }
+</style>
+</head>
+<body>
+
+<div id="score-bar">
+  <span>⭐ <span id="score">0</span></span>
+  <span>🚂 ふみきりゲーム</span>
+  <span>❤️ <span id="lives">3</span></span>
+</div>
+
+<div id="game-wrap">
+  <canvas id="c" width="480" height="320"></canvas>
+</div>
+
+<div id="btn-area">
+  <button id="btn-fumikiri" ontouchstart="toggleBarrier()" onclick="toggleBarrier()">
+    🚧<br>しゃだんき<br>ボタン
+  </button>
+</div>
+
+<div id="message" id="message"></div>
+
+<script>
+// ===== Canvas setup =====
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 480, H = 320;
+
+// ===== Audio (Web Audio API) =====
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, dur, type='square', vol=0.15) {
+  const osc = AC.createOscillator();
+  const gain = AC.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, AC.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+  osc.connect(gain); gain.connect(AC.destination);
+  osc.start(); osc.stop(AC.currentTime + dur);
+}
+
+function beepWarning() {
+  // Alternating beeps like a real crossing
+  playTone(880, 0.18, 'square', 0.18);
+  setTimeout(() => playTone(660, 0.18, 'square', 0.18), 300);
+}
+
+function playSuccess() {
+  [523, 659, 784, 1047].forEach((f, i) =>
+    setTimeout(() => playTone(f, 0.2, 'sine', 0.2), i * 120));
+}
+
+function playMiss() {
+  [400, 300, 200].forEach((f, i) =>
+    setTimeout(() => playTone(f, 0.25, 'sawtooth', 0.25), i * 150));
+}
+
+function playTrainHorn() {
+  playTone(220, 0.5, 'sawtooth', 0.3);
+  setTimeout(() => playTone(196, 0.7, 'sawtooth', 0.25), 200);
+}
+
+// ===== State =====
+let score = 0, lives = 3;
+let barrierAngle = 0;        // 0 = up (horizontal), 1 = down (90°)
+let barrierTarget = 0;
+let barrierLocked = false;
+
+let trainX = -200;           // train horizontal position
+let trainState = 'waiting';  // waiting | warning | coming | passed
+let warningTimer = 0;
+let warningInterval = null;
+let beepCount = 0;
+
+let cars = [];               // [{x, side, stopped}]
+let stars = [];              // celebration particles
+
+let nextTrainDelay = 2000;
+
+// ===== Barrier helper =====
+function toggleBarrier() {
+  if (barrierLocked) return;
+  if (AC.state === 'suspended') AC.resume();
+  barrierTarget = barrierTarget === 0 ? 1 : 0;
+  const btn = document.getElementById('btn-fumikiri');
+  btn.classList.toggle('down', barrierTarget === 1);
+  btn.classList.add('pressed');
+  setTimeout(() => btn.classList.remove('pressed'), 120);
+}
+
+// ===== Cars =====
+function spawnCar(side) {
+  cars.push({ x: side === 'left' ? -60 : W + 60, side, stopped: false, color: randomCarColor() });
+}
+function randomCarColor() {
+  return ['#e74c3c','#3498db','#f39c12','#9b59b6','#1abc9c'][Math.floor(Math.random()*5)];
+}
+
+// ===== Message popup =====
+let msgTimeout = null;
+function showMessage(txt) {
+  const el = document.getElementById('message');
+  el.textContent = txt;
+  el.classList.add('show');
+  clearTimeout(msgTimeout);
+  msgTimeout = setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+// ===== Score/Lives UI =====
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('lives').textContent = '❤️'.repeat(Math.max(0,lives));
+}
+
+// ===== Train sequence =====
+function startWarning() {
+  trainState = 'warning';
+  warningTimer = 0;
+  beepCount = 0;
+  warningInterval = setInterval(() => {
+    beepWarning();
+    beepCount++;
+    if (beepCount >= 4) {
+      clearInterval(warningInterval);
+      warningInterval = null;
+      startTrain();
+    }
+  }, 500);
+}
+
+function startTrain() {
+  trainState = 'coming';
+  trainX = -220;
+  playTrainHorn();
+}
+
+function trainPassed() {
+  const barrierDown = barrierTarget === 1;
+  const carsOk = cars.every(c => c.side === 'right' ? c.x > 290 : c.x < 190);
+
+  if (barrierDown) {
+    // Success!
+    score += 10;
+    playSuccess();
+    showMessage('やった！ 🎉 +10');
+    spawnStars();
+  } else {
+    // Barrier was up — danger!
+    lives = Math.max(0, lives - 1);
+    playMiss();
+    showMessage(lives > 0 ? 'あぶない！ 😱' : 'ゲームオーバー 😢');
+  }
+  updateUI();
+
+  trainState = 'passed';
+  // Reset after train clears screen
+  setTimeout(() => {
+    barrierTarget = 0;
+    document.getElementById('btn-fumikiri').classList.remove('down');
+    cars = [];
+    trainState = 'waiting';
+    if (lives <= 0) {
+      setTimeout(resetGame, 1500);
+    } else {
+      // Spawn new cars and schedule next train
+      setTimeout(() => spawnCar('left'), 200);
+      setTimeout(() => spawnCar('right'), 600);
+      nextTrainDelay = Math.max(3000, 6000 - score * 20);
+      setTimeout(startWarning, nextTrainDelay);
+    }
+  }, 2500);
+}
+
+function resetGame() {
+  score = 0; lives = 3;
+  cars = []; stars = [];
+  barrierTarget = 0;
+  barrierAngle = 0;
+  trainX = -220;
+  trainState = 'waiting';
+  clearInterval(warningInterval);
+  warningInterval = null;
+  document.getElementById('btn-fumikiri').classList.remove('down');
+  updateUI();
+  showMessage('もう一度！ 🚂');
+  setTimeout(() => spawnCar('left'), 500);
+  setTimeout(() => spawnCar('right'), 900);
+  setTimeout(startWarning, 5000);
+}
+
+// ===== Stars / Celebration =====
+function spawnStars() {
+  for (let i = 0; i < 20; i++) {
+    stars.push({
+      x: W/2 + (Math.random()-0.5)*120,
+      y: H/2 + (Math.random()-0.5)*80,
+      vx: (Math.random()-0.5)*4,
+      vy: -Math.random()*4 - 2,
+      life: 1,
+      color: `hsl(${Math.random()*360},90%,60%)`,
+      r: 4 + Math.random()*6
+    });
+  }
+}
+
+// ===== Drawing helpers =====
+function drawSky() {
+  const grad = ctx.createLinearGradient(0,0,0,H*0.55);
+  grad.addColorStop(0,'#87CEEB');
+  grad.addColorStop(1,'#d0ecf7');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H*0.55);
+}
+
+function drawGround() {
+  // Grass
+  ctx.fillStyle = '#7ec850';
+  ctx.fillRect(0, H*0.55, W, H*0.45);
+
+  // Road
+  ctx.fillStyle = '#95a5a6';
+  ctx.fillRect(0, H*0.55, W, H*0.3);
+
+  // Road center dashes
+  ctx.strokeStyle = '#f1c40f';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([24, 16]);
+  ctx.beginPath();
+  ctx.moveTo(0, H*0.7); ctx.lineTo(W, H*0.7);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawTracks() {
+  // Rails
+  ctx.strokeStyle = '#7f8c8d';
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(0, H*0.57); ctx.lineTo(W, H*0.57); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H*0.63); ctx.lineTo(W, H*0.63); ctx.stroke();
+  // Sleepers
+  ctx.strokeStyle = '#6b4c2a';
+  ctx.lineWidth = 8;
+  for (let x = 0; x < W; x += 28) {
+    ctx.beginPath();
+    ctx.moveTo(x, H*0.565); ctx.lineTo(x, H*0.635);
+    ctx.stroke();
+  }
+}
+
+function drawCrossmarkSign() {
+  // X sign above crossing
+  const cx = W/2, cy = H*0.38;
+  ctx.save();
+  // Post
+  ctx.fillStyle = '#7f8c8d';
+  ctx.fillRect(cx-3, cy, 6, 60);
+  // X shape
+  ctx.strokeStyle = '#e74c3c';
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(cx-18, cy-18); ctx.lineTo(cx+18, cy+18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+18, cy-18); ctx.lineTo(cx-18, cy+18); ctx.stroke();
+  ctx.restore();
+}
+
+function drawBarrier() {
+  const angle = barrierAngle * Math.PI/2; // 0=horizontal, PI/2=down
+  const pivotX = W/2 - 30, pivotY = H*0.53;
+  const len = 120;
+
+  // Pole post
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(pivotX-4, pivotY-30, 8, 60);
+
+  // Barrier arm (rotates around pivot)
+  ctx.save();
+  ctx.translate(pivotX, pivotY);
+  ctx.rotate(-angle);
+  // Striped arm
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#e74c3c' : '#ffffff';
+    ctx.fillRect(i*(len/6), -5, len/6, 10);
+  }
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath();
+  ctx.arc(len, 0, 7, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawWarningLights() {
+  const flash = Math.floor(Date.now() / 300) % 2 === 0;
+  const cx = W/2 + 30, cy = H*0.48;
+  // Two lights alternating
+  ctx.fillStyle = flash ? '#e74c3c' : '#7f8c8d';
+  ctx.beginPath(); ctx.arc(cx-10, cy, 9, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = flash ? '#7f8c8d' : '#e74c3c';
+  ctx.beginPath(); ctx.arc(cx+10, cy, 9, 0, Math.PI*2); ctx.fill();
+
+  // Glow
+  if (flash) {
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath(); ctx.arc(cx-10, cy, 18, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawCar(car) {
+  const y = H*0.655;
+  const dir = car.side === 'left' ? 1 : -1; // facing direction
+  ctx.save();
+  ctx.translate(car.x, y);
+  if (dir === -1) ctx.scale(-1, 1);
+
+  // Body
+  ctx.fillStyle = car.color;
+  ctx.beginPath();
+  ctx.roundRect(-30, -18, 60, 26, 6);
+  ctx.fill();
+
+  // Roof
+  ctx.fillStyle = car.color;
+  ctx.beginPath();
+  ctx.roundRect(-18, -30, 38, 16, 5);
+  ctx.fill();
+
+  // Windows
+  ctx.fillStyle = 'rgba(173,216,230,0.85)';
+  ctx.beginPath(); ctx.roundRect(-14, -28, 14, 12, 3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(2, -28, 14, 12, 3); ctx.fill();
+
+  // Wheels
+  ctx.fillStyle = '#2c3e50';
+  ctx.beginPath(); ctx.arc(-18, 8, 8, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(18, 8, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#bdc3c7';
+  ctx.beginPath(); ctx.arc(-18, 8, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(18, 8, 4, 0, Math.PI*2); ctx.fill();
+
+  // Headlight
+  ctx.fillStyle = '#f9ca24';
+  ctx.beginPath(); ctx.ellipse(30, -4, 5, 4, 0, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawTrain() {
+  if (trainState !== 'coming' && trainState !== 'passed' && trainX < -100) return;
+  const y = H*0.6;
+
+  // Draw multiple cars
+  const carColors = ['#e74c3c','#e67e22','#f1c40f','#2ecc71'];
+  for (let i = 3; i >= 0; i--) {
+    const cx = trainX - i*90;
+    ctx.save();
+    ctx.translate(cx, y);
+
+    // Car body
+    ctx.fillStyle = carColors[i % carColors.length];
+    ctx.beginPath();
+    ctx.roundRect(-42, -26, 84, 36, 6);
+    ctx.fill();
+
+    // Windows row
+    ctx.fillStyle = 'rgba(200,230,255,0.8)';
+    for (let w = -30; w <= 20; w += 18) {
+      ctx.beginPath(); ctx.roundRect(w, -20, 12, 14, 3); ctx.fill();
+    }
+
+    // Wheels
+    ctx.fillStyle = '#2c3e50';
+    [-28, 28].forEach(wx => {
+      ctx.beginPath(); ctx.arc(wx, 10, 9, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#95a5a6';
+      ctx.beginPath(); ctx.arc(wx, 10, 5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#2c3e50';
+    });
+
+    ctx.restore();
+  }
+
+  // Locomotive (front)
+  const lx = trainX + 90;
+  ctx.save();
+  ctx.translate(lx, y);
+  ctx.fillStyle = '#2c3e50';
+  ctx.beginPath();
+  ctx.roundRect(-45, -32, 90, 42, 8);
+  ctx.fill();
+  // Cab window
+  ctx.fillStyle = '#f39c12';
+  ctx.fillRect(-44, -32, 90, 10);
+  ctx.fillStyle = 'rgba(200,230,255,0.9)';
+  ctx.beginPath(); ctx.roundRect(15, -28, 22, 16, 4); ctx.fill();
+  // Headlight
+  ctx.fillStyle = '#f9ca24';
+  ctx.beginPath(); ctx.arc(46, -10, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,240,100,0.4)';
+  ctx.beginPath(); ctx.arc(46, -10, 16, 0, Math.PI*2); ctx.fill();
+  // Chimney / smoke stack
+  ctx.fillStyle = '#1a252f';
+  ctx.fillRect(20, -42, 12, 14);
+  // Wheels
+  ctx.fillStyle = '#e74c3c';
+  [-30, 0, 30].forEach(wx => {
+    ctx.beginPath(); ctx.arc(wx, 10, 11, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath(); ctx.arc(wx, 10, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#e74c3c';
+  });
+  ctx.restore();
+}
+
+function drawSmoke() {
+  if (trainState !== 'coming') return;
+  const smokeX = trainX + 135;
+  const time = Date.now() / 400;
+  [0,1,2].forEach(i => {
+    const age = (time + i/3) % 1;
+    const sx = smokeX - age*20;
+    const sy = H*0.6 - 42 - age*30;
+    const sr = 8 + age*12;
+    ctx.globalAlpha = (1-age)*0.4;
+    ctx.fillStyle = '#ecf0f1';
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawStars() {
+  stars.forEach(s => {
+    ctx.globalAlpha = s.life;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawClouds(t) {
+  const clouds = [{x:60,y:40,r:28},{x:200,y:25,r:22},{x:380,y:55,r:32}];
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  clouds.forEach(c => {
+    const ox = ((t*0.02 + c.x) % (W+80)) - 40;
+    [0,22,-22,36,-36].forEach(dx => {
+      ctx.beginPath();
+      ctx.arc(ox+dx, c.y, c.r*(0.6+Math.abs(dx)/120), 0, Math.PI*2);
+      ctx.fill();
+    });
+  });
+}
+
+// ===== Main update & draw =====
+let lastTime = 0;
+function loop(ts) {
+  const dt = ts - lastTime;
+  lastTime = ts;
+
+  // Update barrier angle
+  const barrierSpeed = 2.5 / 1000;
+  if (barrierAngle < barrierTarget) barrierAngle = Math.min(barrierTarget, barrierAngle + barrierSpeed*dt);
+  else if (barrierAngle > barrierTarget) barrierAngle = Math.max(barrierTarget, barrierAngle - barrierSpeed*dt);
+
+  // Update train
+  if (trainState === 'coming') {
+    trainX += dt * 0.35;
+    if (trainX > W + 250) {
+      trainPassed();
+    }
+    // Lock barrier while train passes crossing area
+    barrierLocked = (trainX > 160 && trainX < W + 50);
+  } else {
+    barrierLocked = false;
+  }
+
+  // Update cars
+  const crossLeft = 210, crossRight = 270; // crossing zone x
+  cars.forEach(car => {
+    const speed = 1.2;
+    const stopX = car.side === 'left' ? crossLeft - 55 : crossRight + 55;
+    const barrierBlocking = barrierTarget === 1 || barrierAngle > 0.3;
+
+    if (car.side === 'left') {
+      if (barrierBlocking && car.x >= stopX - 5) {
+        car.stopped = true;
+      }
+      if (!car.stopped || (car.x < stopX - 5)) car.x += speed;
+      if (car.x > W + 80) car.x = -80; // wrap around
+    } else {
+      if (barrierBlocking && car.x <= stopX + 5) {
+        car.stopped = true;
+      }
+      if (!car.stopped || (car.x > stopX + 5)) car.x -= speed;
+      if (car.x < -80) car.x = W + 80;
+    }
+
+    // Unblock when barrier up
+    if (!barrierBlocking) car.stopped = false;
+  });
+
+  // Update stars
+  stars.forEach(s => {
+    s.x += s.vx; s.y += s.vy;
+    s.vy += 0.08;
+    s.life -= 0.02;
+  });
+  stars = stars.filter(s => s.life > 0);
+
+  // === Draw ===
+  ctx.clearRect(0,0,W,H);
+  const t = ts/1000;
+
+  drawSky();
+  drawClouds(t);
+  drawGround();
+  drawTracks();
+  drawCrossmarkSign();
+
+  if (trainState === 'warning' || trainState === 'coming' || trainState === 'passed') {
+    drawWarningLights();
+  }
+
+  drawSmoke();
+  drawTrain();
+  drawBarrier();
+  cars.forEach(drawCar);
+  drawStars();
+
+  requestAnimationFrame(loop);
+}
+
+// ===== Init =====
+updateUI();
+showMessage('ボタンをおして！🚂');
+setTimeout(() => {
+  spawnCar('left');
+  spawnCar('right');
+  setTimeout(startWarning, 4000);
+}, 1500);
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
