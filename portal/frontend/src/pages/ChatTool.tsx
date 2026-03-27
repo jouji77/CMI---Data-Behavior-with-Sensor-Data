@@ -181,8 +181,8 @@ export default function ChatTool() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 w-full max-w-sm">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <MessageSquare size={24} className="text-blue-500" />
+            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+              <MessageSquare size={24} className="text-red-600" />
             </div>
             <h2 className="text-xl font-bold text-slate-800">チャットに参加</h2>
             <p className="text-sm text-slate-500 mt-1">名前と役割を入力してください</p>
@@ -196,7 +196,7 @@ export default function ChatTool() {
                 placeholder="山田 太郎"
                 value={setupForm.name}
                 onChange={e => setSetupForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
             <div>
@@ -204,7 +204,7 @@ export default function ChatTool() {
               <select
                 value={setupForm.role}
                 onChange={e => setSetupForm(f => ({ ...f, role: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="顧客">顧客</option>
                 <option value="ベンダー">ベンダー</option>
@@ -212,7 +212,7 @@ export default function ChatTool() {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="w-full py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
             >
               チャットを開始
             </button>
@@ -231,7 +231,7 @@ export default function ChatTool() {
             <h2 className="text-sm font-semibold text-slate-700">チャットルーム</h2>
             <button
               onClick={() => setShowNewRoom(true)}
-              className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors"
+              className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
               title="新しいルーム"
             >
               <Plus size={16} />
@@ -244,7 +244,7 @@ export default function ChatTool() {
 
         {/* New Room Form */}
         {showNewRoom && (
-          <div className="p-3 border-b border-gray-100 bg-blue-50">
+          <div className="p-3 border-b border-gray-100 bg-gray-50">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -252,10 +252,10 @@ export default function ChatTool() {
                 value={newRoomName}
                 onChange={e => setNewRoomName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && createRoom()}
-                className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
                 autoFocus
               />
-              <button onClick={createRoom} className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600">
+              <button onClick={createRoom} className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700">
                 <Plus size={12} />
               </button>
               <button onClick={() => setShowNewRoom(false)} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded">
@@ -279,7 +279,7 @@ export default function ChatTool() {
                 onClick={() => connectToRoom(room, userSetup)}
                 className={clsx(
                   'w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors',
-                  selectedRoom?.room_id === room.room_id && 'bg-blue-50 border-l-2 border-l-blue-500'
+                  selectedRoom?.room_id === room.room_id && 'bg-red-50 border-l-2 border-l-red-600'
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -355,7 +355,7 @@ export default function ChatTool() {
                       </div>
                       <div className={clsx(
                         'px-3 py-2 rounded-2xl text-sm shadow-sm',
-                        isMe ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white text-slate-700 rounded-tl-sm border border-gray-100'
+                        isMe ? 'bg-red-600 text-white rounded-tr-sm' : 'bg-white text-slate-700 rounded-tl-sm border border-gray-100'
                       )}>
                         {msg.message}
                       </div>
@@ -375,12 +375,12 @@ export default function ChatTool() {
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  className="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Send size={16} />
                 </button>

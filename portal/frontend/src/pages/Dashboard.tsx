@@ -77,28 +77,28 @@ export default function Dashboard() {
       label: '総デバイス数',
       value: readings.length,
       icon: Activity,
-      color: 'bg-blue-500',
+      color: 'bg-red-600',
       link: '/sensor',
     },
     {
       label: 'アラート',
       value: alertCount,
       icon: AlertTriangle,
-      color: alertCount > 0 ? 'bg-red-500' : 'bg-green-500',
+      color: alertCount > 0 ? 'bg-red-600' : 'bg-gray-500',
       link: '/sensor',
     },
     {
       label: 'ドキュメント',
       value: documents.length,
       icon: FileText,
-      color: 'bg-purple-500',
+      color: 'bg-gray-600',
       link: '/documents',
     },
     {
       label: 'チャット',
       value: '–',
       icon: MessageSquare,
-      color: 'bg-indigo-500',
+      color: 'bg-gray-500',
       link: '/chat',
     },
   ]
@@ -107,7 +107,7 @@ export default function Dashboard() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">ダッシュボード</h1>
-        <p className="text-slate-500 mt-1">遠心圧縮機モニタリングポータルへようこそ</p>
+        <p className="text-gray-500 mt-1">HI**** Compressor User Portal へようこそ</p>
       </div>
 
       {/* Summary Cards */}
@@ -134,7 +134,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-800">圧縮機ステータス</h2>
-            <Link to="/sensor" className="text-sm text-blue-600 hover:underline">詳細 →</Link>
+            <Link to="/sensor" className="text-sm text-red-600 hover:underline">詳細 →</Link>
           </div>
 
           {loading ? (
@@ -171,7 +171,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-800">最近のドキュメント</h2>
-            <Link to="/documents" className="text-sm text-blue-600 hover:underline">すべて表示 →</Link>
+            <Link to="/documents" className="text-sm text-red-600 hover:underline">すべて表示 →</Link>
           </div>
 
           {loading ? (
@@ -193,7 +193,7 @@ export default function Dashboard() {
                   key={doc.id}
                   className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
                 >
-                  <FileText size={16} className="text-blue-500 flex-shrink-0" />
+                  <FileText size={16} className="text-red-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-slate-700 truncate">{doc.original_name}</div>
                     <div className="text-xs text-slate-400">{doc.category}</div>
@@ -214,15 +214,15 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold text-slate-800 mb-4">クイックアクセス</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { to: '/sensor', label: 'センサー監視', icon: Activity, desc: 'リアルタイムデータ', color: 'text-blue-500' },
-            { to: '/documents', label: 'ドキュメント', icon: FileText, desc: 'ファイル管理', color: 'text-purple-500' },
-            { to: '/chat', label: 'チャット', icon: MessageSquare, desc: 'サポート連絡', color: 'text-green-500' },
-            { to: '/chatbot', label: 'AIアシスト', icon: Activity, desc: 'AI問い合わせ', color: 'text-orange-500' },
+            { to: '/sensor', label: 'センサー監視', icon: Activity, desc: 'リアルタイムデータ', color: 'text-red-600' },
+            { to: '/documents', label: 'ドキュメント', icon: FileText, desc: 'ファイル管理', color: 'text-gray-600' },
+            { to: '/chat', label: 'チャット', icon: MessageSquare, desc: 'サポート連絡', color: 'text-gray-500' },
+            { to: '/chatbot', label: 'AIアシスト', icon: Activity, desc: 'AI問い合わせ', color: 'text-red-500' },
           ].map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-colors text-center"
+              className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-100 hover:border-red-200 hover:bg-red-50 transition-colors text-center"
             >
               <item.icon size={24} className={item.color} />
               <div>

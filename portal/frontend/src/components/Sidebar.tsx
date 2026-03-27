@@ -12,15 +12,15 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    <div className="flex flex-col w-64 min-h-screen bg-slate-900 text-white">
-      <div className="px-6 py-5 border-b border-slate-700">
+    <div className="flex flex-col w-64 min-h-screen bg-gray-800 text-white">
+      <div className="px-5 py-5 border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <Activity size={20} className="text-white" />
           </div>
           <div>
-            <div className="text-sm font-bold leading-tight">遠心圧縮機</div>
-            <div className="text-xs text-slate-400 leading-tight">モニタリングポータル</div>
+            <div className="text-xs font-bold leading-tight tracking-wide">HI**** Compressor</div>
+            <div className="text-xs text-gray-400 leading-tight">User Portal</div>
           </div>
         </div>
       </div>
@@ -35,8 +35,8 @@ export default function Sidebar() {
               clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               )
             }
           >
@@ -46,10 +46,10 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-6 py-4 border-t border-slate-700">
-        <div className="text-xs text-slate-500">
-          <div>CMI Portal v1.0</div>
-          <div className="mt-0.5">© 2024 CMI</div>
+      <div className="px-6 py-4 border-t border-gray-700">
+        <div className="text-xs text-gray-500">
+          <div>Compressor Portal v1.0</div>
+          <div className="mt-0.5">© 2025 HI****</div>
         </div>
       </div>
     </div>

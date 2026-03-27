@@ -157,7 +157,7 @@ export default function AIChatbot() {
                     className={clsx(
                       'p-2.5 rounded-lg border transition-colors',
                       doc.is_indexed && selectedDocIds.includes(doc.id)
-                        ? 'border-blue-200 bg-blue-50'
+                        ? 'border-red-200 bg-red-50'
                         : 'border-gray-100 bg-white'
                     )}
                   >
@@ -165,7 +165,7 @@ export default function AIChatbot() {
                       {doc.is_indexed ? (
                         <button
                           onClick={() => toggleDocSelection(doc.id)}
-                          className="mt-0.5 text-blue-500 flex-shrink-0"
+                          className="mt-0.5 text-red-600 flex-shrink-0"
                         >
                           {selectedDocIds.includes(doc.id) ? (
                             <CheckSquare size={14} />
@@ -190,7 +190,7 @@ export default function AIChatbot() {
                             <button
                               onClick={() => indexDocument(doc.id)}
                               disabled={indexingId === doc.id}
-                              className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded hover:bg-red-100 transition-colors disabled:opacity-50"
                             >
                               {indexingId === doc.id ? (
                                 <><Loader size={10} className="animate-spin" />処理中</>
@@ -211,7 +211,7 @@ export default function AIChatbot() {
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <button
                   onClick={() => setSelectedDocIds(indexedDocs.map(d => d.id))}
-                  className="w-full text-xs text-blue-600 hover:underline text-left"
+                  className="w-full text-xs text-red-600 hover:underline text-left"
                 >
                   すべて選択 ({indexedDocs.length}件)
                 </button>
@@ -234,8 +234,8 @@ export default function AIChatbot() {
         {/* Header */}
         <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <Bot size={16} className="text-blue-600" />
+            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+              <Bot size={16} className="text-red-600" />
             </div>
             <div>
               <h1 className="text-sm font-semibold text-slate-700">AIチャットボット</h1>
@@ -276,7 +276,7 @@ export default function AIChatbot() {
                   <button
                     key={q}
                     onClick={() => setInput(q)}
-                    className="text-xs text-left px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-slate-600"
+                    className="text-xs text-left px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-slate-600"
                   >
                     {q}
                   </button>
@@ -289,12 +289,12 @@ export default function AIChatbot() {
             <div key={idx} className={clsx('flex gap-3', msg.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
               <div className={clsx(
                 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                msg.role === 'user' ? 'bg-blue-600' : 'bg-white border border-gray-200'
+                msg.role === 'user' ? 'bg-red-600' : 'bg-white border border-gray-200'
               )}>
                 {msg.role === 'user' ? (
                   <span className="text-white text-xs font-bold">You</span>
                 ) : (
-                  <Bot size={14} className="text-blue-600" />
+                  <Bot size={14} className="text-red-600" />
                 )}
               </div>
 
@@ -302,7 +302,7 @@ export default function AIChatbot() {
                 <div className={clsx(
                   'px-4 py-3 rounded-2xl text-sm shadow-sm leading-relaxed',
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-tr-sm'
+                    ? 'bg-red-600 text-white rounded-tr-sm'
                     : 'bg-white text-slate-700 rounded-tl-sm border border-gray-100'
                 )}>
                   <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
@@ -329,7 +329,7 @@ export default function AIChatbot() {
           {loading && (
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-                <Bot size={14} className="text-blue-600" />
+                <Bot size={14} className="text-red-600" />
               </div>
               <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
                 <div className="flex items-center gap-1">
@@ -359,12 +359,12 @@ export default function AIChatbot() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={2}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || loading}
-              className="px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end py-2.5"
+              className="px-4 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end py-2.5"
             >
               {loading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
             </button>

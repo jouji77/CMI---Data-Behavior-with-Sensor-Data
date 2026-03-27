@@ -196,7 +196,7 @@ export default function SensorDiagnostics() {
         <select
           value={selectedDevice}
           onChange={e => handleDeviceChange(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           {devices.map(d => (
             <option key={d.id} value={d.id}>{d.name} ({d.location})</option>

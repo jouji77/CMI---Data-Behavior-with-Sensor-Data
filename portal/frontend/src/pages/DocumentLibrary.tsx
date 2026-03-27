@@ -165,12 +165,12 @@ export default function DocumentLibrary() {
             placeholder="アップロード者名"
             value={uploadForm.uploaded_by}
             onChange={e => setUploadForm(f => ({ ...f, uploaded_by: e.target.value }))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           />
           <select
             value={uploadForm.category}
             onChange={e => setUploadForm(f => ({ ...f, category: e.target.value }))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -179,14 +179,14 @@ export default function DocumentLibrary() {
             placeholder="説明（任意）"
             value={uploadForm.description}
             onChange={e => setUploadForm(f => ({ ...f, description: e.target.value }))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         </div>
 
         <div
           className={clsx(
             'border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer',
-            dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+            dragOver ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-red-300 hover:bg-gray-50'
           )}
           onDragOver={e => { e.preventDefault(); setDragOver(true) }}
           onDragLeave={() => setDragOver(false)}
@@ -202,8 +202,8 @@ export default function DocumentLibrary() {
           />
           {uploading ? (
             <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-blue-600">アップロード中...</p>
+              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-red-600">アップロード中...</p>
             </div>
           ) : (
             <>
@@ -224,7 +224,7 @@ export default function DocumentLibrary() {
             placeholder="ファイル名で検索..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         </div>
         <div className="relative">
@@ -232,7 +232,7 @@ export default function DocumentLibrary() {
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
-            className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+            className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none bg-white"
           >
             <option value="">すべてのカテゴリ</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -277,7 +277,7 @@ export default function DocumentLibrary() {
                           {doc.description && <div className="text-xs text-slate-400 truncate">{doc.description}</div>}
                         </div>
                         {doc.is_indexed && (
-                          <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">AI済</span>
+                          <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">AI済</span>
                         )}
                       </div>
                     </td>
@@ -291,7 +291,7 @@ export default function DocumentLibrary() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleDownload(doc)}
-                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           title="ダウンロード"
                         >
                           <Download size={15} />
