@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
-import { Package, ShoppingCart, X, Plus, Minus, Star, AlertCircle, CheckCircle } from 'lucide-react'
+import { Package, ShoppingCart, X, Plus, Minus, Star, AlertCircle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
+import CompressorExplodedView from '../components/digitaltwin/CompressorExplodedView'
 
 interface SparePart {
   id: number
@@ -28,6 +29,26 @@ interface CartItem {
 }
 
 const DEVICES = ['CC-001', 'CC-002', 'CC-003', 'CC-004']
+
+// Assembly-to-parts keyword mapping
+const ASSEMBLY_PARTS_MAP: Record<string, string[]> = {
+  impeller: ['羽根車', 'インペラ', 'Impeller'],
+  bearing_thrust: ['スラスト', 'Thrust'],
+  bearing_journal: ['ジャーナル', 'Journal', '軸受'],
+  bearing_nde: ['ジャーナル', 'Journal', 'NDE', '軸受'],
+  seal: ['シール', 'Seal', 'ガスケット'],
+  coupling: ['カップリング', 'Coupling'],
+  casing: ['ケーシング', 'Casing'],
+  inlet_casing: ['ケーシング', 'Casing', '入口'],
+  shaft: ['シャフト', 'Shaft'],
+  diffuser: ['ディフューザー', 'Diffuser'],
+  bearing_housing: ['ハウジング', 'Housing', '軸受'],
+}
+
+function partMatchesAssembly(part: SparePart, assembly: string): boolean {
+  const keywords = ASSEMBLY_PARTS_MAP[assembly] || []
+  return keywords.some(kw => part.name_ja.includes(kw) || part.category.includes(kw))
+}
 
 function StockBadge({ status }: { status: string }) {
   const { t } = useTranslation()
@@ -156,6 +177,8 @@ export default function SpareParts() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
   const [showQuoteModal, setShowQuoteModal] = useState(false)
+  const [showExplodedView, setShowExplodedView] = useState(true)
+  const [highlightedAssembly, setHighlightedAssembly] = useState<string | null>(null)
 
   const categories = [...new Set(parts.map(p => p.category))]
 
@@ -163,7 +186,7 @@ export default function SpareParts() {
     const fetchParts = async () => {
       setLoading(true)
       try {
-        const params: any = {}
+        const params: Record<string, string> = {}
         if (deviceFilter) params.device_id = deviceFilter
         if (categoryFilter) params.category = categoryFilter
         const res = await axios.get('/api/spare-parts', { params })
@@ -195,6 +218,24 @@ export default function SpareParts() {
 
   const cartTotal = cart.reduce((sum, item) => sum + item.part.unit_price_jpy * item.quantity, 0)
 
+  const handleAssemblyClick = (assembly: string) => {
+    setHighlightedAssembly(assembly || null)
+  }
+
+  // Filter parts by selected assembly
+  const filteredParts = highlightedAssembly
+    ? parts.filter(p => partMatchesAssembly(p, highlightedAssembly))
+    : parts
+
+  // Parts for exploded view (simplified interface)
+  const explodedParts = parts.map(p => ({
+    id: p.id,
+    part_number: p.part_number,
+    name_ja: p.name_ja,
+    category: p.category,
+    is_recommended_for_next_maintenance: p.is_recommended_for_next_maintenance,
+  }))
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -204,18 +245,27 @@ export default function SpareParts() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{t('spareParts.title')}</h1>
         </div>
-        <button
-          onClick={() => setShowCart(!showCart)}
-          className="relative flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          <ShoppingCart size={16} />
-          {t('spareParts.cart')}
-          {cart.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {cart.length}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowExplodedView(!showExplodedView)}
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-200"
+          >
+            {showExplodedView ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            🔧 コンポーネントビューを{showExplodedView ? '非表示' : '表示'}
+          </button>
+          <button
+            onClick={() => setShowCart(!showCart)}
+            className="relative flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            <ShoppingCart size={16} />
+            {t('spareParts.cart')}
+            {cart.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {cart.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -236,7 +286,32 @@ export default function SpareParts() {
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
+        {highlightedAssembly && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-lg">
+              アセンブリフィルター: <strong>{highlightedAssembly}</strong> ({filteredParts.length}件)
+            </span>
+            <button
+              onClick={() => setHighlightedAssembly(null)}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Exploded View Panel */}
+      {showExplodedView && (
+        <div className="mb-6">
+          <CompressorExplodedView
+            spareParts={explodedParts}
+            selectedPartId={null}
+            onAssemblyClick={handleAssemblyClick}
+            highlightedAssembly={highlightedAssembly}
+          />
+        </div>
+      )}
 
       <div className="flex gap-6">
         {/* Parts grid */}
@@ -245,7 +320,7 @@ export default function SpareParts() {
             <div className="text-center py-12 text-gray-500">{t('common.loading')}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {parts.map(part => {
+              {filteredParts.map(part => {
                 const name = lang === 'en' ? part.name_en : part.name_ja
                 const desc = lang === 'en' ? part.description_en : part.description_ja
                 const inCart = cart.find(i => i.part.id === part.id)
@@ -313,6 +388,17 @@ export default function SpareParts() {
                   </div>
                 )
               })}
+              {filteredParts.length === 0 && !loading && (
+                <div className="col-span-3 text-center py-12 text-gray-400">
+                  <Package size={40} className="mx-auto mb-3 opacity-30" />
+                  <p>一致する部品が見つかりませんでした</p>
+                  {highlightedAssembly && (
+                    <button onClick={() => setHighlightedAssembly(null)} className="mt-2 text-sm text-red-600 hover:underline">
+                      フィルター解除
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

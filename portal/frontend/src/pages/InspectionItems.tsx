@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { ClipboardCheck, AlertTriangle, CheckCircle, Info, Printer } from 'lucide-react'
 import clsx from 'clsx'
+import PlantLayoutSVG from '../components/digitaltwin/PlantLayoutSVG'
 
 interface InspectionItem {
   id: number
@@ -21,6 +22,22 @@ interface InspectionItem {
 }
 
 const DEVICES = ['CC-001', 'CC-002', 'CC-003', 'CC-004']
+
+// Zone-to-category keyword mapping (mirrors PlantLayoutSVG)
+const ZONE_CATEGORY_MAP: Record<string, string[]> = {
+  filter: ['フィルター', 'Filter', '入口', 'Inlet'],
+  driver: ['原動機', 'Motor', 'Driver', 'エンジン'],
+  compressor: ['圧縮機', 'Compressor', 'インペラ', 'ケーシング', '本体'],
+  cooler: ['冷却', 'Cooler', 'クーラー'],
+  control: ['制御', 'Control', '計装', '電気'],
+  luboil: ['潤滑', 'Lube', 'Oil', 'オイル'],
+  seal: ['シール', 'Seal', 'ガス'],
+}
+
+function itemMatchesZone(item: InspectionItem, zone: string): boolean {
+  const keywords = ZONE_CATEGORY_MAP[zone] || []
+  return keywords.some(kw => item.category.includes(kw) || item.item_name_ja.includes(kw))
+}
 
 function StatusIcon({ status }: { status: string }) {
   if (status === 'normal') return <CheckCircle size={16} className="text-green-500" />
@@ -47,9 +64,10 @@ function StatusBadge({ status }: { status: string }) {
 interface ChecklistItemProps {
   item: InspectionItem
   onChecked: (id: number, status: string) => void
+  highlighted?: boolean
 }
 
-function ChecklistItem({ item, onChecked }: ChecklistItemProps) {
+function ChecklistItem({ item, onChecked, highlighted }: ChecklistItemProps) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   const [showMethod, setShowMethod] = useState(false)
@@ -70,7 +88,11 @@ function ChecklistItem({ item, onChecked }: ChecklistItemProps) {
     }
   }
 
-  const rowBg = item.is_recommended ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'
+  const rowBg = highlighted
+    ? 'bg-rose-50 border-rose-300 ring-1 ring-rose-300'
+    : item.is_recommended
+    ? 'bg-red-50 border-red-200'
+    : 'bg-white border-gray-200'
 
   return (
     <div className={clsx('rounded-lg border p-4 transition-all', rowBg)}>
@@ -151,6 +173,7 @@ export default function InspectionItems() {
   const [selectedDevice, setSelectedDevice] = useState('')
   const [checklist, setChecklist] = useState<{ daily: InspectionItem[]; weekly: InspectionItem[]; monthly: InspectionItem[] } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [activeZone, setActiveZone] = useState<string | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
   const fetchChecklist = async () => {
@@ -179,8 +202,21 @@ export default function InspectionItems() {
     })
   }
 
+  const handleZoneClick = (zone: string) => {
+    setActiveZone(zone || null)
+  }
+
   const allItems = checklist ? [...checklist.daily, ...checklist.weekly, ...checklist.monthly] : []
   const warningItems = allItems.filter(i => i.is_recommended || i.status === 'warning' || i.status === 'caution')
+
+  // Layout items for plant SVG (simplified interface)
+  const layoutItems = allItems.map(i => ({
+    id: i.id,
+    item_name_ja: i.item_name_ja,
+    category: i.category,
+    status: i.status,
+    frequency: i.frequency,
+  }))
 
   const handlePrint = () => window.print()
 
@@ -189,6 +225,14 @@ export default function InspectionItems() {
     weekly: t('inspection.frequency.weekly'),
     monthly: t('inspection.frequency.monthly'),
   }
+
+  // Filter function by active zone
+  function filterByZone(items: InspectionItem[]): InspectionItem[] {
+    if (!activeZone) return items
+    return items.filter(item => itemMatchesZone(item, activeZone))
+  }
+
+  const lang2 = lang
 
   return (
     <div className="p-6 max-w-5xl mx-auto" ref={printRef}>
@@ -217,7 +261,7 @@ export default function InspectionItems() {
           {DEVICES.map(d => (
             <button
               key={d}
-              onClick={() => setSelectedDevice(d)}
+              onClick={() => { setSelectedDevice(d); setActiveZone(null) }}
               className={clsx(
                 'px-4 py-2 rounded-lg text-sm font-medium transition-colors border',
                 selectedDevice === d
@@ -239,42 +283,72 @@ export default function InspectionItems() {
       ) : loading ? (
         <div className="text-center py-12 text-gray-500">{t('common.loading')}</div>
       ) : checklist ? (
-        <div className="space-y-8">
-          {/* Warning items highlighted */}
-          {warningItems.length > 0 && (
-            <section>
-              <h2 className="text-base font-semibold text-red-700 mb-3 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-600" />
-                {t('inspection.recommendedItems')} ({warningItems.length})
-              </h2>
-              <div className="space-y-2">
-                {warningItems.map(item => (
-                  <ChecklistItem key={item.id} item={item} onChecked={handleItemChecked} />
-                ))}
-              </div>
-            </section>
+        <div className="space-y-6">
+          {/* Plant Layout SVG */}
+          <PlantLayoutSVG
+            inspectionItems={layoutItems}
+            selectedItemId={null}
+            onZoneClick={handleZoneClick}
+            activeZone={activeZone}
+          />
+
+          {/* Active zone filter banner */}
+          {activeZone && (
+            <div className="flex items-center justify-between bg-rose-50 border border-rose-200 rounded-lg px-4 py-2">
+              <span className="text-sm text-rose-700 font-medium">
+                ゾーンフィルター: <strong>{activeZone}</strong> の点検項目を表示中
+              </span>
+              <button onClick={() => setActiveZone(null)} className="text-xs text-rose-600 hover:underline">
+                フィルター解除
+              </button>
+            </div>
           )}
 
-          {/* Grouped by frequency */}
-          {(['daily', 'weekly', 'monthly'] as const).map(freq => {
-            const items = checklist[freq]
-            if (items.length === 0) return null
-            return (
-              <section key={freq}>
-                <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <ClipboardCheck size={16} />
-                  {FREQ_LABELS[freq]} ({items.length}件)
+          <div className="space-y-8">
+            {/* Warning items highlighted */}
+            {warningItems.length > 0 && !activeZone && (
+              <section>
+                <h2 className="text-base font-semibold text-red-700 mb-3 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-red-600" />
+                  {t('inspection.recommendedItems')} ({warningItems.length})
                 </h2>
                 <div className="space-y-2">
-                  {items.map(item => (
+                  {warningItems.map(item => (
                     <ChecklistItem key={item.id} item={item} onChecked={handleItemChecked} />
                   ))}
                 </div>
               </section>
-            )
-          })}
+            )}
+
+            {/* Grouped by frequency */}
+            {(['daily', 'weekly', 'monthly'] as const).map(freq => {
+              const rawItems = checklist[freq]
+              const items = filterByZone(rawItems)
+              if (items.length === 0) return null
+              return (
+                <section key={freq}>
+                  <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <ClipboardCheck size={16} />
+                    {FREQ_LABELS[freq]} ({items.length}件{activeZone ? ` / 全${rawItems.length}件` : ''})
+                  </h2>
+                  <div className="space-y-2">
+                    {items.map(item => (
+                      <ChecklistItem
+                        key={item.id}
+                        item={item}
+                        onChecked={handleItemChecked}
+                        highlighted={activeZone ? itemMatchesZone(item, activeZone) : false}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
         </div>
       ) : null}
+      {/* suppress unused variable warning */}
+      <span className="hidden">{lang2}</span>
     </div>
   )
 }
