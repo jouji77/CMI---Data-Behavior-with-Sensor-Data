@@ -1,8 +1,8 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard, Activity, FileText, MessageSquare, Bot,
-  Wrench, BookOpen, Package, ClipboardCheck, Calculator, LogOut, User
+  Wrench, BookOpen, Package, ClipboardCheck, Calculator, LogOut, User, Shield
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -110,6 +110,17 @@ export default function Sidebar() {
               <p className="text-xs text-gray-500 truncate">{user.company}</p>
             </div>
           </div>
+        )}
+
+        {/* Admin link (only visible to admins) */}
+        {user?.role === 'admin' && (
+          <Link
+            to="/admin"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+          >
+            <Shield size={15} />
+            管理サイト
+          </Link>
         )}
 
         {/* Logout */}

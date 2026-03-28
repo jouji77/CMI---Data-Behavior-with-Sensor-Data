@@ -12,6 +12,13 @@ import TechnicalInfo from './pages/TechnicalInfo'
 import SpareParts from './pages/SpareParts'
 import InspectionItems from './pages/InspectionItems'
 import SolutionMenu from './pages/SolutionMenu'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import Companies from './pages/admin/Companies'
+import Compressors from './pages/admin/Compressors'
+import AdminUsers from './pages/admin/Users'
+import AdminSpareParts from './pages/admin/AdminSpareParts'
+import AdminArticles from './pages/admin/AdminArticles'
 
 function App() {
   return (
@@ -20,6 +27,16 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* Admin routes */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/companies" element={<Companies />} />
+          <Route path="/admin/compressors" element={<Compressors />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/spare-parts" element={<AdminSpareParts />} />
+          <Route path="/admin/articles" element={<AdminArticles />} />
+        </Route>
 
         {/* Protected routes (auth guard in Layout) */}
         <Route path="/" element={<Layout />}>

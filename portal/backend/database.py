@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, Integer, Float, DateTime, Text, Boolean
+from sqlalchemy import String, Integer, Float, DateTime, Text, Boolean, ForeignKey
 from datetime import datetime
 import os
 
@@ -167,6 +167,38 @@ class InspectionItem(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="normal")  # normal/caution/warning
     last_checked: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     is_recommended: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class Company(Base):
+    __tablename__ = "companies"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(300), nullable=False)
+    name_en: Mapped[str] = mapped_column(String(300), nullable=True)
+    country: Mapped[str] = mapped_column(String(100), nullable=True)
+    contact_email: Mapped[str] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str] = mapped_column(String(50), nullable=True)
+    address: Mapped[str] = mapped_column(String(500), nullable=True)
+    industry: Mapped[str] = mapped_column(String(200), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Compressor(Base):
+    __tablename__ = "compressors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    company_id: Mapped[int] = mapped_column(Integer, ForeignKey("companies.id"), nullable=True)
+    serial_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    model: Mapped[str] = mapped_column(String(200), nullable=False)
+    installation_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    location: Mapped[str] = mapped_column(String(300), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
+    design_pressure: Mapped[float] = mapped_column(Float, nullable=True)
+    design_flow: Mapped[float] = mapped_column(Float, nullable=True)
+    rated_power: Mapped[float] = mapped_column(Float, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 async def init_db():

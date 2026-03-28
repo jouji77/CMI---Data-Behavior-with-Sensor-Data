@@ -6,6 +6,7 @@ import os
 from database import init_db
 from routers import sensors, documents, chat, chatbot
 from routers import auth, maintenance, articles, spare_parts, inspection, solution
+from routers import admin as admin_module
 
 app = FastAPI(
     title="遠心圧縮機ポータル API",
@@ -38,6 +39,7 @@ app.include_router(articles.router, prefix="/api/articles", tags=["Articles"])
 app.include_router(spare_parts.router, prefix="/api/spare-parts", tags=["Spare Parts"])
 app.include_router(inspection.router, prefix="/api/inspection", tags=["Inspection"])
 app.include_router(solution.router, prefix="/api/solution", tags=["Solution"])
+app.include_router(admin_module.router, prefix="/api/admin", tags=["Admin"])
 
 
 @app.on_event("startup")
@@ -52,11 +54,14 @@ async def startup_event():
     from routers.spare_parts import seed_spare_parts
     from routers.inspection import seed_inspection_items
 
+    from routers.admin import seed_admin_data
+
     async with AsyncSessionLocal() as db:
         await seed_maintenance(db)
         await seed_articles(db)
         await seed_spare_parts(db)
         await seed_inspection_items(db)
+        await seed_admin_data(db)
 
     print("Seed data initialized.")
 
