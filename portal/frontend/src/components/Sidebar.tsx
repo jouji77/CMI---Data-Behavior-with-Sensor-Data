@@ -2,46 +2,26 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard, Activity, FileText, MessageSquare, Bot,
-  Wrench, BookOpen, Package, ClipboardCheck, Calculator, LogOut, User, Zap
+  Wrench, BookOpen, Package, ClipboardCheck, Calculator, LogOut, User
 } from 'lucide-react'
 import clsx from 'clsx'
 
-interface NavGroup {
-  label: string
-  items: { to: string; labelJa: string; subtitleJa: string; icon: typeof LayoutDashboard; end?: boolean }[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    label: 'メイン機能',
-    items: [
-      { to: '/', labelJa: 'ダッシュボード', subtitleJa: 'Dashboard', icon: LayoutDashboard, end: true },
-      { to: '/sensor', labelJa: 'センサー診断', subtitleJa: 'Sensor Diagnostics', icon: Activity },
-    ],
-  },
-  {
-    label: 'サービス',
-    items: [
-      { to: '/maintenance', labelJa: 'メンテナンス来歴', subtitleJa: 'Maintenance', icon: Wrench },
-      { to: '/documents', labelJa: 'ドキュメント', subtitleJa: 'Documents', icon: FileText },
-      { to: '/spare-parts', labelJa: '推奨予備品', subtitleJa: 'Spare Parts', icon: Package },
-      { to: '/inspection', labelJa: '推奨点検項目', subtitleJa: 'Inspection', icon: ClipboardCheck },
-    ],
-  },
-  {
-    label: '情報・ツール',
-    items: [
-      { to: '/technical', labelJa: '技術・サービス情報', subtitleJa: 'Technical Info', icon: BookOpen },
-      { to: '/chat', labelJa: 'チャット', subtitleJa: 'Chat', icon: MessageSquare },
-      { to: '/chatbot', labelJa: 'AIチャットボット', subtitleJa: 'AI Chatbot', icon: Bot },
-      { to: '/solution', labelJa: 'ソリューション', subtitleJa: 'BWRS Calculator', icon: Calculator },
-    ],
-  },
-]
-
 export default function Sidebar() {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+
+  const navItems = [
+    { to: '/', label: t('nav.dashboard'), icon: LayoutDashboard, end: true },
+    { to: '/sensor', label: t('nav.sensor'), icon: Activity, end: false },
+    { to: '/documents', label: t('nav.documents'), icon: FileText, end: false },
+    { to: '/chat', label: t('nav.chat'), icon: MessageSquare, end: false },
+    { to: '/chatbot', label: t('nav.chatbot'), icon: Bot, end: false },
+    { to: '/maintenance', label: t('nav.maintenance'), icon: Wrench, end: false },
+    { to: '/technical', label: t('nav.technical'), icon: BookOpen, end: false },
+    { to: '/spare-parts', label: t('nav.spareParts'), icon: Package, end: false },
+    { to: '/inspection', label: t('nav.inspection'), icon: ClipboardCheck, end: false },
+    { to: '/solution', label: t('nav.solution'), icon: Calculator, end: false },
+  ]
 
   const userJson = localStorage.getItem('user')
   const user = userJson ? JSON.parse(userJson) : null
@@ -52,78 +32,57 @@ export default function Sidebar() {
     navigate('/login')
   }
 
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'ja' ? 'en' : 'ja'
+    i18n.changeLanguage(newLang)
+    localStorage.setItem('language', newLang)
+  }
+
   return (
-    <div
-      className="flex flex-col w-60 min-h-screen flex-shrink-0"
-      style={{
-        background: 'linear-gradient(180deg, #0a0f1e 0%, #0d1428 100%)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      {/* Logo */}
-      <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="flex flex-col w-64 min-h-screen bg-gray-800 text-white">
+      <div className="px-5 py-5 border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-rose-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-rose-900/50">
-            <Zap size={18} className="text-white" />
+          <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Activity size={20} className="text-white" />
           </div>
           <div>
-            <div className="text-sm font-bold text-white leading-tight tracking-tight">HI**** Compressor</div>
-            <div className="text-xs text-slate-500 leading-tight mt-0.5">User Portal</div>
+            <div className="text-xs font-bold leading-tight tracking-wide">HI**** Compressor</div>
+            <div className="text-xs text-gray-400 leading-tight">User Portal</div>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map(({ to, labelJa, subtitleJa, icon: Icon, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  className={({ isActive }) =>
-                    clsx(
-                      'relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
-                      isActive
-                        ? 'bg-rose-950/40 text-white border-l-2 border-rose-500 pl-[10px]'
-                        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border-l-2 border-transparent'
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <Icon size={16} className={clsx('flex-shrink-0', isActive ? 'text-rose-400' : '')} />
-                      <div className="min-w-0">
-                        <div className="truncate font-medium leading-tight text-[13px]">{labelJa}</div>
-                        <div className="text-[10px] text-slate-600 leading-tight mt-0.5">{subtitleJa}</div>
-                      </div>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          </div>
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {navItems.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              )
+            }
+          >
+            <Icon size={17} className="flex-shrink-0" />
+            <span className="truncate">{label}</span>
+          </NavLink>
         ))}
       </nav>
 
-      {/* Bottom section */}
-      <div className="px-3 py-4 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="px-3 py-4 border-t border-gray-700 space-y-3">
         {/* Language toggle */}
         <div className="flex items-center gap-2 px-1">
-          <span className="text-[10px] text-slate-600 flex-1 uppercase tracking-wide">Language</span>
-          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+          <span className="text-xs text-gray-400 flex-1">言語 / Lang</span>
+          <div className="flex rounded-lg overflow-hidden border border-gray-600">
             <button
               onClick={() => { i18n.changeLanguage('ja'); localStorage.setItem('language', 'ja') }}
               className={clsx(
-                'px-2.5 py-1 text-xs font-medium transition-all duration-150',
-                i18n.language === 'ja'
-                  ? 'bg-rose-600 text-white'
-                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                'px-2.5 py-1 text-xs font-medium transition-colors',
+                i18n.language === 'ja' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
               )}
             >
               JA
@@ -131,10 +90,8 @@ export default function Sidebar() {
             <button
               onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('language', 'en') }}
               className={clsx(
-                'px-2.5 py-1 text-xs font-medium transition-all duration-150',
-                i18n.language === 'en'
-                  ? 'bg-rose-600 text-white'
-                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                'px-2.5 py-1 text-xs font-medium transition-colors',
+                i18n.language === 'en' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
               )}
             >
               EN
@@ -144,14 +101,13 @@ export default function Sidebar() {
 
         {/* User info */}
         {user && (
-          <div className="flex items-center gap-2.5 px-1 py-1 rounded-lg">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-              style={{ background: 'linear-gradient(135deg, #be123c, #9f1239)' }}>
-              {(user.name || 'U')[0].toUpperCase()}
+          <div className="flex items-center gap-2 px-1">
+            <div className="w-7 h-7 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <User size={14} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-slate-300 truncate">{user.name}</p>
-              <p className="text-[10px] text-slate-600 truncate">{user.company}</p>
+              <p className="text-xs font-medium text-gray-200 truncate">{user.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user.company}</p>
             </div>
           </div>
         )}
@@ -159,14 +115,15 @@ export default function Sidebar() {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-500 hover:bg-white/5 hover:text-rose-400 transition-all duration-150"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
         >
-          <LogOut size={13} />
-          <span>ログアウト</span>
+          <LogOut size={15} />
+          {t('common.logout')}
         </button>
 
-        <div className="text-[10px] text-slate-700 px-1">
-          Portal v2.0 · © 2025 HI****
+        <div className="text-xs text-gray-600 px-1">
+          <div>Portal v2.0</div>
+          <div>© 2025 HI****</div>
         </div>
       </div>
     </div>

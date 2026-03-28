@@ -70,6 +70,7 @@ export default function ChatTool() {
       wsRef.current = null
     }
 
+    // Load history
     try {
       const res = await axios.get(`/api/chat/messages/${room.room_id}`)
       const history: ChatMessage[] = (res.data.messages || []).map((m: {
@@ -87,11 +88,14 @@ export default function ChatTool() {
 
     setSelectedRoom(room)
 
+    // Connect WebSocket
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${wsProtocol}//localhost:8000/api/chat/ws/${room.room_id}/${encodeURIComponent(user.name)}/${encodeURIComponent(user.role)}`
     const ws = new WebSocket(wsUrl)
 
-    ws.onopen = () => console.log('WebSocket connected')
+    ws.onopen = () => {
+      console.log('WebSocket connected')
+    }
 
     ws.onmessage = (event) => {
       try {
@@ -103,14 +107,21 @@ export default function ChatTool() {
       }
     }
 
-    ws.onclose = () => console.log('WebSocket disconnected')
-    ws.onerror = (e) => console.error('WebSocket error', e)
+    ws.onclose = () => {
+      console.log('WebSocket disconnected')
+    }
+
+    ws.onerror = (e) => {
+      console.error('WebSocket error', e)
+    }
 
     wsRef.current = ws
   }, [])
 
   useEffect(() => {
-    return () => { wsRef.current?.close() }
+    return () => {
+      wsRef.current?.close()
+    }
   }, [])
 
   const sendMessage = () => {
@@ -157,36 +168,43 @@ export default function ChatTool() {
     }
   }
 
-  // Setup screen
+  const roleColor: Record<string, string> = {
+    '顧客': 'bg-blue-100 text-blue-700',
+    'customer': 'bg-blue-100 text-blue-700',
+    'ベンダー': 'bg-orange-100 text-orange-700',
+    'vendor': 'bg-orange-100 text-orange-700',
+  }
+
+  // Setup Modal
   if (!userSetup) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 animate-fade-in">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 w-full max-w-sm">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <MessageSquare size={24} className="text-rose-600" />
+            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+              <MessageSquare size={24} className="text-red-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">チャットに参加</h2>
-            <p className="text-sm text-gray-400 mt-1">名前と役割を入力してください</p>
+            <h2 className="text-xl font-bold text-slate-800">チャットに参加</h2>
+            <p className="text-sm text-slate-500 mt-1">名前と役割を入力してください</p>
           </div>
           <form onSubmit={handleSetupSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">お名前</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1">お名前</label>
               <input
                 type="text"
                 required
                 placeholder="山田 太郎"
                 value={setupForm.name}
                 onChange={e => setSetupForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">役割</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1">役割</label>
               <select
                 value={setupForm.role}
                 onChange={e => setSetupForm(f => ({ ...f, role: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="顧客">顧客</option>
                 <option value="ベンダー">ベンダー</option>
@@ -194,7 +212,7 @@ export default function ChatTool() {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 transition-colors shadow-sm shadow-rose-200"
+              className="w-full py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
             >
               チャットを開始
             </button>
@@ -205,27 +223,28 @@ export default function ChatTool() {
   }
 
   return (
-    <div className="flex h-screen animate-fade-in">
-      {/* Room List Sidebar */}
-      <div className="w-64 bg-gray-950 flex flex-col flex-shrink-0">
-        <div className="px-4 py-4 border-b border-white/5">
+    <div className="flex h-screen">
+      {/* Sidebar: Room List */}
+      <div className="w-64 bg-white border-r border-gray-100 flex flex-col">
+        <div className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-xs font-semibold text-gray-300 uppercase tracking-wide">チャットルーム</h2>
+            <h2 className="text-sm font-semibold text-slate-700">チャットルーム</h2>
             <button
               onClick={() => setShowNewRoom(true)}
-              className="p-1 text-gray-500 hover:text-rose-400 hover:bg-white/5 rounded transition-colors"
+              className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
               title="新しいルーム"
             >
-              <Plus size={15} />
+              <Plus size={16} />
             </button>
           </div>
-          <div className="text-xs text-gray-600 mt-1">
-            {userSetup.name} · {userSetup.role}
+          <div className="text-xs text-slate-400">
+            {userSetup.name} ({userSetup.role})
           </div>
         </div>
 
+        {/* New Room Form */}
         {showNewRoom && (
-          <div className="px-3 py-3 border-b border-white/5 bg-white/3">
+          <div className="p-3 border-b border-gray-100 bg-gray-50">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -233,25 +252,25 @@ export default function ChatTool() {
                 value={newRoomName}
                 onChange={e => setNewRoomName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && createRoom()}
-                className="flex-1 px-2 py-1.5 text-xs border border-white/10 rounded-lg bg-white/5 text-gray-300 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
                 autoFocus
               />
-              <button onClick={createRoom} className="p-1.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors">
+              <button onClick={createRoom} className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700">
                 <Plus size={12} />
               </button>
-              <button onClick={() => setShowNewRoom(false)} className="p-1.5 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg transition-colors">
+              <button onClick={() => setShowNewRoom(false)} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded">
                 <X size={12} />
               </button>
             </div>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto py-2">
+        <div className="flex-1 overflow-y-auto">
           {rooms.length === 0 ? (
-            <div className="text-center py-10 px-4">
-              <MessageSquare size={20} className="mx-auto mb-2 text-gray-700" />
-              <p className="text-xs text-gray-600">ルームがありません</p>
-              <p className="text-xs text-gray-700 mt-1">「+」で作成</p>
+            <div className="text-center py-8 text-slate-400 text-xs px-4">
+              <MessageSquare size={24} className="mx-auto mb-2 opacity-40" />
+              <p>ルームがありません</p>
+              <p className="mt-1">「+」で作成してください</p>
             </div>
           ) : (
             rooms.map(room => (
@@ -259,19 +278,17 @@ export default function ChatTool() {
                 key={room.room_id}
                 onClick={() => connectToRoom(room, userSetup)}
                 className={clsx(
-                  'w-full text-left px-4 py-3 hover:bg-white/5 transition-colors border-l-2',
-                  selectedRoom?.room_id === room.room_id
-                    ? 'bg-white/5 border-l-rose-500 text-white'
-                    : 'border-l-transparent text-gray-500 hover:text-gray-300'
+                  'w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors',
+                  selectedRoom?.room_id === room.room_id && 'bg-red-50 border-l-2 border-l-red-600'
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <Hash size={11} className="flex-shrink-0" />
-                  <span className="text-xs font-medium truncate">{room.room_name}</span>
-                  {room.is_active && <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full flex-shrink-0" />}
+                  <Hash size={12} className="text-slate-400" />
+                  <span className="text-sm font-medium text-slate-700 truncate">{room.room_name}</span>
+                  {room.is_active && <span className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0" />}
                 </div>
-                <div className="text-xs text-gray-600 mt-0.5 ml-4">
-                  {room.active_users.length > 0 ? `${room.active_users.length}名参加中` : `作成: ${room.created_by}`}
+                <div className="text-xs text-slate-400 mt-0.5 ml-4">
+                  {room.active_users.length > 0 ? `${room.active_users.length}名参加中` : `作成者: ${room.created_by}`}
                 </div>
               </button>
             ))
@@ -280,27 +297,24 @@ export default function ChatTool() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-slate-50 min-w-0">
+      <div className="flex-1 flex flex-col bg-gray-50">
         {!selectedRoom ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center text-slate-400">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <MessageSquare size={28} className="opacity-30" />
-              </div>
-              <p className="text-sm font-medium text-gray-500">ルームを選択</p>
-              <p className="text-xs mt-1 text-gray-400">左のリストからルームを選択してください</p>
+              <MessageSquare size={48} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">ルームを選択してチャットを開始</p>
             </div>
           </div>
         ) : (
           <>
             {/* Header */}
-            <div className="bg-white border-b border-gray-100 px-5 py-3.5 flex items-center justify-between shadow-sm">
+            <div className="bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Hash size={15} className="text-gray-400" />
-                <span className="font-semibold text-gray-800 text-sm">{selectedRoom.room_name}</span>
+                <Hash size={16} className="text-slate-400" />
+                <span className="font-semibold text-slate-700">{selectedRoom.room_name}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Users size={13} />
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Users size={14} />
                 {onlineUsers.length > 0 ? (
                   <span>{onlineUsers.map(u => u.user_name).join(', ')}</span>
                 ) : (
@@ -310,12 +324,12 @@ export default function ChatTool() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {messages.map((msg, idx) => {
                 if (msg.type === 'system') {
                   return (
-                    <div key={idx} className="flex justify-center">
-                      <span className="text-xs text-gray-400 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                    <div key={idx} className="text-center">
+                      <span className="text-xs text-slate-400 bg-white px-3 py-1 rounded-full border border-gray-100">
                         {msg.message}
                       </span>
                     </div>
@@ -323,32 +337,25 @@ export default function ChatTool() {
                 }
 
                 const isMe = msg.sender_name === userSetup.name
-                const isCustomer = msg.sender_role === '顧客' || msg.sender_role === 'customer'
-
                 return (
-                  <div key={idx} className={clsx('flex gap-3 items-end', isMe ? 'flex-row-reverse' : 'flex-row')}>
+                  <div key={idx} className={clsx('flex gap-2', isMe ? 'flex-row-reverse' : 'flex-row')}>
                     <div className={clsx(
                       'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
-                      isCustomer ? 'bg-sky-100 text-sky-700' : 'bg-orange-100 text-orange-700'
+                      msg.sender_role === '顧客' || msg.sender_role === 'customer' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
                     )}>
                       {(msg.sender_name || '?')[0].toUpperCase()}
                     </div>
-                    <div className={clsx('max-w-xs lg:max-w-md flex flex-col gap-1', isMe ? 'items-end' : 'items-start')}>
+                    <div className={clsx('max-w-xs lg:max-w-md', isMe ? 'items-end' : 'items-start', 'flex flex-col gap-0.5')}>
                       <div className={clsx('flex items-center gap-2 text-xs', isMe ? 'flex-row-reverse' : '')}>
-                        <span className="font-medium text-gray-600">{msg.sender_name}</span>
-                        <span className={clsx(
-                          'px-1.5 py-0.5 rounded-full text-[10px] font-medium',
-                          isCustomer ? 'bg-sky-50 text-sky-600' : 'bg-orange-50 text-orange-600'
-                        )}>
+                        <span className="font-medium text-slate-600">{msg.sender_name}</span>
+                        <span className={clsx('px-1.5 py-0.5 rounded-full', roleColor[msg.sender_role || ''] || 'bg-gray-100 text-gray-600')}>
                           {msg.sender_role}
                         </span>
-                        <span className="text-gray-400">{formatTime(msg.timestamp)}</span>
+                        <span className="text-slate-400">{formatTime(msg.timestamp)}</span>
                       </div>
                       <div className={clsx(
-                        'px-4 py-2.5 rounded-2xl text-sm shadow-sm leading-relaxed',
-                        isMe
-                          ? 'bg-rose-600 text-white rounded-br-sm'
-                          : 'bg-white text-gray-700 rounded-bl-sm border border-gray-100'
+                        'px-3 py-2 rounded-2xl text-sm shadow-sm',
+                        isMe ? 'bg-red-600 text-white rounded-tr-sm' : 'bg-white text-slate-700 rounded-tl-sm border border-gray-100'
                       )}>
                         {msg.message}
                       </div>
@@ -364,16 +371,16 @@ export default function ChatTool() {
               <div className="flex gap-3">
                 <input
                   type="text"
-                  placeholder="メッセージを入力... (Enter で送信)"
+                  placeholder="メッセージを入力..."
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  className="px-4 py-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shadow-rose-200"
+                  className="px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Send size={16} />
                 </button>

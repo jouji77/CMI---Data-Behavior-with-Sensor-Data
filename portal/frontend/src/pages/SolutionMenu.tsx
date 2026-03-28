@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
-import { Calculator, Copy, Check, Beaker } from 'lucide-react'
+import { Calculator, Copy, Check, ChevronDown, Beaker } from 'lucide-react'
 
 const GAS_COMPONENTS = ['CH4', 'C2H6', 'C3H8', 'nC4H10', 'iC4H10', 'N2', 'CO2'] as const
 type GasComponent = (typeof GAS_COMPONENTS)[number]
@@ -49,17 +49,15 @@ interface Preset {
 
 function ResultCard({ label, value, unit, highlight }: { label: string; value: string | number; unit?: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-2xl p-4 ${highlight ? 'bg-rose-50 border border-rose-200' : 'bg-gray-50 border border-gray-100'}`}>
-      <p className="text-xs font-medium text-gray-400 mb-1">{label}</p>
-      <p className={`text-xl font-bold tracking-tight ${highlight ? 'text-rose-700' : 'text-gray-800'}`}>
+    <div className={`rounded-lg p-3 ${highlight ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+      <p className={`text-lg font-bold ${highlight ? 'text-red-700' : 'text-gray-800'}`}>
         {typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : value}
-        {unit && <span className="text-sm font-normal text-gray-400 ml-1.5">{unit}</span>}
+        {unit && <span className="text-sm font-normal text-gray-500 ml-1">{unit}</span>}
       </p>
     </div>
   )
 }
-
-const inputClass = "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
 
 export default function SolutionMenu() {
   const { t, i18n } = useTranslation()
@@ -143,7 +141,7 @@ export default function SolutionMenu() {
       `断熱ヘッド: ${result.isentropic_head_kJ_kg} kJ/kg`,
       `断熱効率: ${result.isentropic_efficiency_pct} %`,
       `圧力比: ${result.compression_ratio}`,
-      `吐出温度: ${result.outlet_temp_c.toFixed(1)} °C (${result.outlet_temp_k.toFixed(2)} K)`,
+      `吐出温度: ${result.outlet_temp_c} °C (${result.outlet_temp_k} K)`,
       `分子量: ${result.molecular_weight}`,
       `Z入口: ${result.compressibility_z_inlet}`,
       `Z出口: ${result.compressibility_z_outlet}`,
@@ -156,53 +154,52 @@ export default function SolutionMenu() {
   }
 
   return (
-    <div className="p-8 animate-fade-in max-w-6xl">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('solution.title')}</h1>
-        <p className="text-gray-400 mt-1 text-sm">BWRSエンジニアリング計算ツール</p>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center">
+          <Calculator size={20} className="text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">{t('solution.title')}</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Calculator Input */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
-            <Calculator size={16} className="text-rose-500" />
-            <h2 className="font-semibold text-gray-800 text-sm">{t('solution.bwrsCalculator')}</h2>
+        {/* BWRS Calculator */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-gray-800 px-5 py-3 flex items-center gap-2">
+            <Calculator size={16} className="text-red-400" />
+            <h2 className="font-semibold text-white text-sm">{t('solution.bwrsCalculator')}</h2>
           </div>
 
-          <div className="p-5 space-y-6">
+          <div className="p-5 space-y-5">
             {/* Gas Composition */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('solution.gasComposition')}</label>
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
-                  isValid
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-rose-50 text-rose-700 border-rose-200'
-                }`}>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">{t('solution.gasComposition')}</label>
+                <span className={`text-xs font-medium ${isValid ? 'text-green-600' : 'text-red-500'}`}>
                   {t('solution.total')}: {total.toFixed(1)}%
                 </span>
               </div>
 
               {/* Preset */}
-              <select
-                value={selectedPreset}
-                onChange={(e) => handlePresetChange(e.target.value)}
-                className={inputClass + ' mb-4'}
-              >
-                <option value="">{t('solution.selectPreset')}</option>
-                {presets.map(p => (
-                  <option key={p.name_en} value={lang === 'en' ? p.name_en : p.name_ja}>
-                    {lang === 'en' ? p.name_en : p.name_ja}
-                  </option>
-                ))}
-              </select>
+              <div className="mb-3">
+                <select
+                  value={selectedPreset}
+                  onChange={(e) => handlePresetChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">{t('solution.selectPreset')}</option>
+                  {presets.map(p => (
+                    <option key={p.name_en} value={lang === 'en' ? p.name_en : p.name_ja}>
+                      {lang === 'en' ? p.name_en : p.name_ja}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {GAS_COMPONENTS.map(comp => (
                   <div key={comp} className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500 w-36 flex-shrink-0">{GAS_COMPONENT_NAMES[comp]}</span>
+                    <span className="text-xs text-gray-600 w-36 flex-shrink-0">{GAS_COMPONENT_NAMES[comp]}</span>
                     <input
                       type="range"
                       min="0"
@@ -210,9 +207,9 @@ export default function SolutionMenu() {
                       step="0.1"
                       value={composition[comp]}
                       onChange={(e) => setComposition(prev => ({ ...prev, [comp]: parseFloat(e.target.value) }))}
-                      className="flex-1 accent-rose-600 h-1.5"
+                      className="flex-1 accent-red-600"
                     />
-                    <div className="relative w-16 flex-shrink-0">
+                    <div className="relative w-16">
                       <input
                         type="number"
                         min="0"
@@ -220,77 +217,102 @@ export default function SolutionMenu() {
                         step="0.1"
                         value={composition[comp]}
                         onChange={(e) => setComposition(prev => ({ ...prev, [comp]: parseFloat(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-right focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-xs text-right focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
                     </div>
                   </div>
                 ))}
               </div>
               {!isValid && (
-                <p className="text-xs text-rose-600 mt-2 flex items-center gap-1">
-                  <span>⚠</span> {t('solution.mustSum100')} (現在: {total.toFixed(1)}%)
-                </p>
+                <p className="text-xs text-red-500 mt-1">{t('solution.mustSum100')} (現在: {total.toFixed(1)}%)</p>
               )}
             </div>
 
             {/* Operating Conditions */}
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">運転条件</label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">{t('solution.inletPressure')} <span className="text-gray-300">MPa</span></label>
-                  <input type="number" value={inletPressure} onChange={(e) => setInletPressure(e.target.value)} step="0.01" className={inputClass} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t('solution.inletPressure')}</label>
+                <input
+                  type="number"
+                  value={inletPressure}
+                  onChange={(e) => setInletPressure(e.target.value)}
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-gray-600">{t('solution.inletTemp')}</label>
+                  <button
+                    onClick={() => {
+                      const val = parseFloat(inletTemp)
+                      if (tempUnit === 'C') {
+                        setInletTemp((val + 273.15).toFixed(2))
+                        setTempUnit('K')
+                      } else {
+                        setInletTemp((val - 273.15).toFixed(2))
+                        setTempUnit('C')
+                      }
+                    }}
+                    className="text-xs text-red-600 font-medium"
+                  >
+                    [{tempUnit === 'C' ? '°C' : 'K'}] {t('solution.toggleTemp')}
+                  </button>
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs text-gray-400">{t('solution.inletTemp')}</label>
-                    <button
-                      onClick={() => {
-                        const val = parseFloat(inletTemp)
-                        if (tempUnit === 'C') {
-                          setInletTemp((val + 273.15).toFixed(2))
-                          setTempUnit('K')
-                        } else {
-                          setInletTemp((val - 273.15).toFixed(2))
-                          setTempUnit('C')
-                        }
-                      }}
-                      className="text-xs text-rose-600 font-medium hover:text-rose-700"
-                    >
-                      [{tempUnit === 'C' ? '°C' : 'K'}]
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <input type="number" value={inletTemp} onChange={(e) => setInletTemp(e.target.value)} step="0.1" className={inputClass + ' pr-10'} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                      {tempUnit === 'C' ? '°C' : 'K'}
-                    </span>
-                  </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={inletTemp}
+                    onChange={(e) => setInletTemp(e.target.value)}
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 pr-10"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                    {tempUnit === 'C' ? '°C' : 'K'}
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">{t('solution.outletPressure')} <span className="text-gray-300">MPa</span></label>
-                  <input type="number" value={outletPressure} onChange={(e) => setOutletPressure(e.target.value)} step="0.1" className={inputClass} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">{t('solution.massFlow')} <span className="text-gray-300">kg/s</span></label>
-                  <input type="number" value={massFlow} onChange={(e) => setMassFlow(e.target.value)} step="0.1" className={inputClass} />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs text-gray-400 mb-1.5">{t('solution.shaftPower')} <span className="text-gray-300">kW</span></label>
-                  <input type="number" value={shaftPower} onChange={(e) => setShaftPower(e.target.value)} step="10" className={inputClass} />
-                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t('solution.outletPressure')}</label>
+                <input
+                  type="number"
+                  value={outletPressure}
+                  onChange={(e) => setOutletPressure(e.target.value)}
+                  step="0.1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t('solution.massFlow')}</label>
+                <input
+                  type="number"
+                  value={massFlow}
+                  onChange={(e) => setMassFlow(e.target.value)}
+                  step="0.1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t('solution.shaftPower')}</label>
+                <input
+                  type="number"
+                  value={shaftPower}
+                  onChange={(e) => setShaftPower(e.target.value)}
+                  step="10"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
               </div>
             </div>
 
             {error && (
-              <p className="text-rose-600 text-sm bg-rose-50 rounded-xl px-4 py-3 border border-rose-100">{error}</p>
+              <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>
             )}
 
             <button
               onClick={handleCalculate}
               disabled={loading || !isValid}
-              className="w-full bg-rose-600 hover:bg-rose-700 disabled:bg-rose-200 disabled:text-rose-400 text-white font-bold py-3 rounded-xl transition-all shadow-sm shadow-rose-200 hover:shadow-rose-300 flex items-center justify-center gap-2 text-sm"
+              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <Calculator size={16} />
               {loading ? t('solution.calculating') : t('solution.calculate')}
@@ -298,76 +320,93 @@ export default function SolutionMenu() {
           </div>
         </div>
 
-        {/* Results Panel */}
-        <div className="space-y-5">
+        {/* Results */}
+        <div className="space-y-4">
           {result ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div>
-                  <h2 className="font-semibold text-gray-800 text-sm">{t('solution.results')}</h2>
-                  <p className="text-xs text-gray-400 mt-0.5">BWRS計算結果</p>
-                </div>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gray-800 px-5 py-3 flex items-center justify-between">
+                <h2 className="font-semibold text-white text-sm">{t('solution.results')}</h2>
                 <button
                   onClick={handleCopyResults}
-                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-all"
+                  className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white transition-colors"
                 >
-                  {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                  {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
                   {copied ? t('solution.copiedResults') : t('solution.copyResults')}
                 </button>
               </div>
 
               <div className="p-5">
-                <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <ResultCard label={t('solution.polytropicHead')} value={result.polytropic_head_kJ_kg} unit="kJ/kg" highlight />
                   <ResultCard label={t('solution.polytropicEfficiency')} value={result.polytropic_efficiency_pct} unit="%" highlight />
                   <ResultCard label={t('solution.isentropicHead')} value={result.isentropic_head_kJ_kg} unit="kJ/kg" />
                   <ResultCard label={t('solution.isentropicEfficiency')} value={result.isentropic_efficiency_pct} unit="%" />
-                  <ResultCard label={t('solution.compressionRatio')} value={result.compression_ratio} />
-                  <ResultCard label={t('solution.outletTemp')} value={`${result.outlet_temp_c.toFixed(1)} °C`} />
                 </div>
 
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">詳細パラメータ</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {[
-                      { label: t('solution.molecularWeight'), value: result.molecular_weight.toFixed(3) },
-                      { label: t('solution.kValue'), value: result.k_value.toFixed(4) },
-                      { label: t('solution.zInlet'), value: result.compressibility_z_inlet.toFixed(5) },
-                      { label: t('solution.zOutlet'), value: result.compressibility_z_outlet.toFixed(5) },
-                      { label: t('solution.specificVolumeInlet'), value: `${result.specific_volume_inlet.toFixed(5)} m³/kg` },
-                      { label: t('solution.specificVolumeOutlet'), value: `${result.specific_volume_outlet.toFixed(5)} m³/kg` },
-                      { label: t('solution.polytropicN'), value: result.polytropic_exponent_n.toFixed(4) },
-                      { label: t('solution.actualHead'), value: `${result.actual_head_kJ_kg.toFixed(2)} kJ/kg` },
-                    ].map(item => (
-                      <div key={item.label} className="flex justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-xl">
-                        <span className="text-gray-400">{item.label}</span>
-                        <span className="font-semibold text-gray-700 font-mono">{item.value}</span>
-                      </div>
-                    ))}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <ResultCard label={t('solution.compressionRatio')} value={result.compression_ratio} />
+                  <ResultCard
+                    label={t('solution.outletTemp')}
+                    value={`${result.outlet_temp_c.toFixed(1)} °C`}
+                  />
+                </div>
+
+                <div className="border-t pt-3">
+                  <p className="text-xs font-medium text-gray-500 mb-2">詳細パラメータ</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.molecularWeight')}</span>
+                      <span className="font-medium">{result.molecular_weight.toFixed(3)}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.kValue')}</span>
+                      <span className="font-medium">{result.k_value.toFixed(4)}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.zInlet')}</span>
+                      <span className="font-medium">{result.compressibility_z_inlet.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.zOutlet')}</span>
+                      <span className="font-medium">{result.compressibility_z_outlet.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.specificVolumeInlet')}</span>
+                      <span className="font-medium">{result.specific_volume_inlet.toFixed(5)} m³/kg</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.specificVolumeOutlet')}</span>
+                      <span className="font-medium">{result.specific_volume_outlet.toFixed(5)} m³/kg</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.polytropicN')}</span>
+                      <span className="font-medium">{result.polytropic_exponent_n.toFixed(4)}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-50 px-2 py-1.5 rounded">
+                      <span>{t('solution.actualHead')}</span>
+                      <span className="font-medium">{result.actual_head_kJ_kg.toFixed(2)} kJ/kg</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center text-gray-400">
-              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Calculator size={28} className="opacity-30" />
-              </div>
-              <p className="text-sm font-medium text-gray-500">計算結果</p>
-              <p className="text-xs mt-1">左のフォームで計算を実行してください</p>
+            <div className="bg-gray-50 rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-400">
+              <Calculator size={48} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">{t('solution.calculate')}ボタンを押して計算を実行してください</p>
             </div>
           )}
 
-          {/* Other tools */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2 text-sm">
-              <Beaker size={15} className="text-violet-500" />
+          {/* Other tools placeholder */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <Beaker size={16} />
               {t('solution.otherTools')}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {['サージ制御計算', 'ノズル流量計算', '熱交換器設計', '配管圧力損失'].map(name => (
-                <div key={name} className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-3 text-center">
-                  <p className="text-sm font-medium text-gray-500">{name}</p>
+                <div key={name} className="bg-gray-50 rounded-lg p-3 text-center border border-dashed border-gray-200">
+                  <p className="text-sm font-medium text-gray-600">{name}</p>
                   <p className="text-xs text-gray-400 mt-1">{t('solution.comingSoon')}</p>
                 </div>
               ))}
