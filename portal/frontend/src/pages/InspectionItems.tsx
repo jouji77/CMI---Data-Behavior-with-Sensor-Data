@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
-import { ClipboardCheck, AlertTriangle, CheckCircle, Info, Printer } from 'lucide-react'
+import { ClipboardCheck, AlertTriangle, CheckCircle, Info, Printer, ChevronDown, ChevronUp } from 'lucide-react'
 import clsx from 'clsx'
 
 interface InspectionItem {
@@ -22,23 +22,16 @@ interface InspectionItem {
 
 const DEVICES = ['CC-001', 'CC-002', 'CC-003', 'CC-004']
 
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'normal') return <CheckCircle size={16} className="text-green-500" />
-  if (status === 'caution') return <AlertTriangle size={16} className="text-yellow-500" />
-  if (status === 'warning') return <AlertTriangle size={16} className="text-red-500" />
-  return <Info size={16} className="text-gray-400" />
-}
-
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation()
   const map: Record<string, string> = {
-    normal: 'bg-green-100 text-green-700',
-    caution: 'bg-yellow-100 text-yellow-700',
-    warning: 'bg-red-100 text-red-700',
+    normal: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    caution: 'bg-amber-50 text-amber-700 border border-amber-200',
+    warning: 'bg-rose-50 text-rose-700 border border-rose-200',
   }
   const label = (t(`inspection.status.${status}` as any) || status) as string
   return (
-    <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', map[status] || 'bg-gray-100 text-gray-600')}>
+    <span className={clsx('px-2.5 py-0.5 rounded-full text-xs font-medium', map[status] || 'bg-gray-50 text-gray-600 border border-gray-200')}>
       {label}
     </span>
   )
@@ -70,75 +63,93 @@ function ChecklistItem({ item, onChecked }: ChecklistItemProps) {
     }
   }
 
-  const rowBg = item.is_recommended ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'
+  const isWarning = item.is_recommended || item.status === 'warning'
 
   return (
-    <div className={clsx('rounded-lg border p-4 transition-all', rowBg)}>
-      <div className="flex items-start gap-3">
-        <StatusIcon status={item.status} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="font-medium text-sm text-gray-800">{name}</span>
-            {item.is_recommended && (
-              <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">要注意</span>
-            )}
-            <StatusBadge status={item.status} />
+    <div className={clsx(
+      'bg-white rounded-2xl border shadow-sm transition-all duration-150 overflow-hidden',
+      isWarning
+        ? 'border-rose-100 border-l-2 border-l-rose-500'
+        : 'border-gray-100 border-l-2 border-l-gray-200',
+    )}>
+      <div className={clsx('px-5 py-4', isWarning && 'bg-rose-50/40')}>
+        <div className="flex items-start gap-4">
+          {/* Status icon */}
+          <div className="flex-shrink-0 mt-0.5">
+            {item.status === 'normal' && <CheckCircle size={16} className="text-emerald-500" />}
+            {item.status === 'caution' && <AlertTriangle size={16} className="text-amber-500" />}
+            {item.status === 'warning' && <AlertTriangle size={16} className="text-rose-500" />}
+            {!['normal','caution','warning'].includes(item.status) && <Info size={16} className="text-gray-400" />}
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-gray-600 mb-2">
-            <div>
-              <span className="text-gray-400">{t('inspection.category')}:</span>
-              <span className="ml-1">{item.category}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+              <span className="font-semibold text-sm text-gray-800">{name}</span>
+              {item.is_recommended && (
+                <span className="bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full font-semibold">要注意</span>
+              )}
+              <StatusBadge status={item.status} />
             </div>
-            {item.normal_range && (
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 mb-3">
               <div>
-                <span className="text-gray-400">{t('inspection.normalRange')}:</span>
-                <span className="ml-1">{item.normal_range}</span>
+                <span className="text-gray-400">{t('inspection.category')}:</span>
+                <span className="ml-1 text-gray-600">{item.category}</span>
               </div>
-            )}
-            {item.current_value && (
+              {item.normal_range && (
+                <div>
+                  <span className="text-gray-400">{t('inspection.normalRange')}:</span>
+                  <span className="ml-1 text-gray-600 font-mono">{item.normal_range}</span>
+                </div>
+              )}
+              {item.current_value && (
+                <div>
+                  <span className="text-gray-400">{t('inspection.currentValue')}:</span>
+                  <span className={clsx(
+                    'ml-1 font-semibold font-mono',
+                    item.status === 'warning' ? 'text-rose-600' : item.status === 'caution' ? 'text-amber-600' : 'text-gray-700'
+                  )}>
+                    {item.current_value}
+                  </span>
+                </div>
+              )}
               <div>
-                <span className="text-gray-400">{t('inspection.currentValue')}:</span>
-                <span className={clsx('ml-1 font-medium', item.status === 'warning' ? 'text-red-600' : item.status === 'caution' ? 'text-yellow-600' : 'text-gray-700')}>
-                  {item.current_value}
+                <span className="text-gray-400">{t('inspection.lastChecked')}:</span>
+                <span className="ml-1 text-gray-500">
+                  {item.last_checked
+                    ? new Date(item.last_checked).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    : t('inspection.notChecked')}
                 </span>
               </div>
-            )}
-            <div>
-              <span className="text-gray-400">{t('inspection.lastChecked')}:</span>
-              <span className="ml-1">
-                {item.last_checked
-                  ? new Date(item.last_checked).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-                  : t('inspection.notChecked')}
-              </span>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleCheck}
-              disabled={checking}
-              className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:bg-gray-400"
-            >
-              <CheckCircle size={12} className="inline mr-1" />
-              {t('inspection.checkNow')}
-            </button>
-            {method && (
+            <div className="flex items-center gap-2.5">
               <button
-                onClick={() => setShowMethod(!showMethod)}
-                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                onClick={handleCheck}
+                disabled={checking}
+                className="flex items-center gap-1.5 text-xs bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg transition-colors disabled:bg-gray-400 font-medium"
               >
-                <Info size={12} />
-                {t('inspection.method')}
+                <CheckCircle size={11} />
+                {t('inspection.checkNow')}
               </button>
+              {method && (
+                <button
+                  onClick={() => setShowMethod(!showMethod)}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Info size={11} />
+                  {t('inspection.method')}
+                  {showMethod ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                </button>
+              )}
+            </div>
+
+            {showMethod && method && (
+              <div className="mt-2.5 p-3 bg-gray-50 rounded-xl text-xs text-gray-600 leading-relaxed border border-gray-100">
+                {method}
+              </div>
             )}
           </div>
-
-          {showMethod && method && (
-            <div className="mt-2 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
-              {method}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -184,45 +195,44 @@ export default function InspectionItems() {
 
   const handlePrint = () => window.print()
 
-  const FREQ_LABELS: Record<string, string> = {
-    daily: t('inspection.frequency.daily'),
-    weekly: t('inspection.frequency.weekly'),
-    monthly: t('inspection.frequency.monthly'),
+  const FREQ_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+    daily: { label: t('inspection.frequency.daily'), color: 'text-rose-600', bg: 'bg-rose-50 border-rose-200' },
+    weekly: { label: t('inspection.frequency.weekly'), color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
+    monthly: { label: t('inspection.frequency.monthly'), color: 'text-sky-600', bg: 'bg-sky-50 border-sky-200' },
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto" ref={printRef}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center">
-            <ClipboardCheck size={20} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('inspection.title')}</h1>
+    <div className="p-8 animate-fade-in max-w-5xl" ref={printRef}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('inspection.title')}</h1>
+          <p className="text-gray-400 mt-1 text-sm">推奨点検項目・チェックリスト</p>
         </div>
         {selectedDevice && (
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
           >
-            <Printer size={16} />
+            <Printer size={15} />
             {t('inspection.printChecklist')}
           </button>
         )}
       </div>
 
       {/* Device selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">{t('inspection.deviceSelector')}</label>
-        <div className="flex gap-3 flex-wrap">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{t('inspection.deviceSelector')}</label>
+        <div className="flex gap-2.5 flex-wrap">
           {DEVICES.map(d => (
             <button
               key={d}
               onClick={() => setSelectedDevice(d)}
               className={clsx(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-colors border',
+                'px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 border',
                 selectedDevice === d
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'border-gray-300 text-gray-600 hover:border-red-400 hover:text-red-600'
+                  ? 'bg-rose-600 border-rose-600 text-white shadow-sm shadow-rose-200'
+                  : 'border-gray-200 text-gray-600 hover:border-rose-300 hover:text-rose-600 bg-white'
               )}
             >
               {d}
@@ -232,22 +242,26 @@ export default function InspectionItems() {
       </div>
 
       {!selectedDevice ? (
-        <div className="text-center py-16 text-gray-400">
-          <ClipboardCheck size={48} className="mx-auto mb-3 opacity-30" />
-          <p>{t('inspection.selectDevice')}</p>
+        <div className="text-center py-20 text-gray-400">
+          <ClipboardCheck size={48} className="mx-auto mb-3 opacity-20" />
+          <p className="text-sm font-medium">{t('inspection.selectDevice')}</p>
+          <p className="text-xs mt-1">上からデバイスを選択してください</p>
         </div>
       ) : loading ? (
-        <div className="text-center py-12 text-gray-500">{t('common.loading')}</div>
+        <div className="space-y-3">
+          {[1,2,3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
+        </div>
       ) : checklist ? (
         <div className="space-y-8">
-          {/* Warning items highlighted */}
+          {/* Warning items */}
           {warningItems.length > 0 && (
             <section>
-              <h2 className="text-base font-semibold text-red-700 mb-3 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-600" />
-                {t('inspection.recommendedItems')} ({warningItems.length})
-              </h2>
-              <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={15} className="text-rose-600" />
+                <h2 className="text-sm font-semibold text-rose-700">{t('inspection.recommendedItems')}</h2>
+                <span className="text-xs bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full font-medium">{warningItems.length}</span>
+              </div>
+              <div className="space-y-2.5">
                 {warningItems.map(item => (
                   <ChecklistItem key={item.id} item={item} onChecked={handleItemChecked} />
                 ))}
@@ -255,17 +269,21 @@ export default function InspectionItems() {
             </section>
           )}
 
-          {/* Grouped by frequency */}
+          {/* By frequency */}
           {(['daily', 'weekly', 'monthly'] as const).map(freq => {
             const items = checklist[freq]
             if (items.length === 0) return null
+            const fc = FREQ_CONFIG[freq]
             return (
               <section key={freq}>
-                <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <ClipboardCheck size={16} />
-                  {FREQ_LABELS[freq]} ({items.length}件)
-                </h2>
-                <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardCheck size={15} className={fc.color} />
+                  <h2 className="text-sm font-semibold text-gray-700">{fc.label}</h2>
+                  <span className={clsx('text-xs px-2 py-0.5 rounded-full font-medium border', fc.bg, fc.color)}>
+                    {items.length}件
+                  </span>
+                </div>
+                <div className="space-y-2.5">
                   {items.map(item => (
                     <ChecklistItem key={item.id} item={item} onChecked={handleItemChecked} />
                   ))}

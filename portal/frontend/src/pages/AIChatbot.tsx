@@ -125,47 +125,50 @@ export default function AIChatbot() {
   const indexedDocs = documents.filter(d => d.is_indexed)
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen animate-fade-in">
       {/* Document Panel */}
-      <div className={clsx('bg-white border-r border-gray-100 flex flex-col transition-all', showDocs ? 'w-72' : 'w-12')}>
+      <div className={clsx(
+        'bg-white border-r border-gray-100 flex flex-col transition-all duration-200 flex-shrink-0',
+        showDocs ? 'w-72' : 'w-12'
+      )}>
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          {showDocs && <h2 className="text-sm font-semibold text-slate-700">参照ドキュメント</h2>}
+          {showDocs && <h2 className="text-sm font-semibold text-gray-700">参照ドキュメント</h2>}
           <button
             onClick={() => setShowDocs(!showDocs)}
-            className="p-1 text-slate-400 hover:text-slate-600 hover:bg-gray-50 rounded transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
             title={showDocs ? 'パネルを閉じる' : 'パネルを開く'}
           >
-            <BookOpen size={16} />
+            <BookOpen size={15} />
           </button>
         </div>
 
         {showDocs && (
           <div className="flex-1 overflow-y-auto p-3">
             {documents.length === 0 ? (
-              <div className="text-center py-6 text-slate-400">
-                <FileText size={24} className="mx-auto mb-2 opacity-40" />
-                <p className="text-xs">ドキュメントライブラリーにファイルをアップロードしてください</p>
+              <div className="text-center py-8 text-gray-400">
+                <FileText size={24} className="mx-auto mb-2 opacity-30" />
+                <p className="text-xs leading-relaxed">ドキュメントライブラリーにファイルをアップロードしてください</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-slate-400 mb-3">
+              <div className="space-y-1.5">
+                <p className="text-xs text-gray-400 mb-3 leading-relaxed">
                   インデックス済みのドキュメントをチェックしてAIに参照させてください
                 </p>
                 {documents.map(doc => (
                   <div
                     key={doc.id}
                     className={clsx(
-                      'p-2.5 rounded-lg border transition-colors',
+                      'p-3 rounded-xl border transition-all duration-150',
                       doc.is_indexed && selectedDocIds.includes(doc.id)
-                        ? 'border-red-200 bg-red-50'
-                        : 'border-gray-100 bg-white'
+                        ? 'border-rose-200 bg-rose-50'
+                        : 'border-gray-100 bg-white hover:border-gray-200'
                     )}
                   >
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2.5">
                       {doc.is_indexed ? (
                         <button
                           onClick={() => toggleDocSelection(doc.id)}
-                          className="mt-0.5 text-red-600 flex-shrink-0"
+                          className="mt-0.5 text-rose-600 flex-shrink-0 hover:text-rose-700 transition-colors"
                         >
                           {selectedDocIds.includes(doc.id) ? (
                             <CheckSquare size={14} />
@@ -174,23 +177,23 @@ export default function AIChatbot() {
                           )}
                         </button>
                       ) : (
-                        <Square size={14} className="mt-0.5 text-gray-300 flex-shrink-0" />
+                        <Square size={14} className="mt-0.5 text-gray-200 flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-slate-700 truncate" title={doc.original_name}>
+                        <p className="text-xs font-medium text-gray-700 truncate" title={doc.original_name}>
                           {doc.original_name}
                         </p>
-                        <p className="text-xs text-slate-400">{doc.category}</p>
+                        <p className="text-xs text-gray-400">{doc.category}</p>
                         <div className="flex items-center gap-1 mt-1.5">
                           {doc.is_indexed ? (
-                            <span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">
+                            <span className="text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-md font-medium">
                               インデックス済
                             </span>
                           ) : (
                             <button
                               onClick={() => indexDocument(doc.id)}
                               disabled={indexingId === doc.id}
-                              className="flex items-center gap-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded hover:bg-red-100 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 text-xs bg-rose-50 text-rose-600 border border-rose-200 px-1.5 py-0.5 rounded-md hover:bg-rose-100 transition-colors disabled:opacity-50 font-medium"
                             >
                               {indexingId === doc.id ? (
                                 <><Loader size={10} className="animate-spin" />処理中</>
@@ -208,17 +211,17 @@ export default function AIChatbot() {
             )}
 
             {indexedDocs.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100 space-y-1.5">
                 <button
                   onClick={() => setSelectedDocIds(indexedDocs.map(d => d.id))}
-                  className="w-full text-xs text-red-600 hover:underline text-left"
+                  className="w-full text-xs text-rose-600 hover:text-rose-700 text-left font-medium py-1"
                 >
                   すべて選択 ({indexedDocs.length}件)
                 </button>
                 {selectedDocIds.length > 0 && (
                   <button
                     onClick={() => setSelectedDocIds([])}
-                    className="w-full text-xs text-slate-400 hover:underline text-left mt-1"
+                    className="w-full text-xs text-gray-400 hover:text-gray-600 text-left py-1"
                   >
                     選択解除
                   </button>
@@ -230,16 +233,16 @@ export default function AIChatbot() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col bg-slate-50 min-w-0">
         {/* Header */}
-        <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
+        <div className="bg-white border-b border-gray-100 px-6 py-3.5 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <Bot size={16} className="text-red-600" />
+            <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center">
+              <Bot size={18} className="text-rose-600" />
             </div>
             <div>
-              <h1 className="text-sm font-semibold text-slate-700">AIチャットボット</h1>
-              <p className="text-xs text-slate-400">
+              <h1 className="text-sm font-semibold text-gray-800">AIチャットボット</h1>
+              <p className="text-xs text-gray-400">
                 {selectedDocIds.length > 0
                   ? `${selectedDocIds.length}件のドキュメントを参照中`
                   : 'ドキュメントなし（一般回答モード）'}
@@ -249,7 +252,7 @@ export default function AIChatbot() {
           {conversation.length > 0 && (
             <button
               onClick={clearConversation}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <Trash2 size={12} />
               会話をクリア
@@ -258,16 +261,18 @@ export default function AIChatbot() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {conversation.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400">
-              <Bot size={48} className="mb-3 opacity-30" />
-              <p className="text-sm font-medium">遠心圧縮機AIアシスタント</p>
-              <p className="text-xs mt-1 text-center max-w-sm">
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 py-16">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                <Bot size={28} className="opacity-30" />
+              </div>
+              <p className="text-sm font-semibold text-gray-600 mb-1">遠心圧縮機AIアシスタント</p>
+              <p className="text-xs text-center max-w-sm leading-relaxed text-gray-400 mb-6">
                 圧縮機に関する技術的な質問にお答えします。
                 ドキュメントをインデックスして選択することで、より正確な回答を得られます。
               </p>
-              <div className="mt-4 grid grid-cols-1 gap-2 max-w-xs w-full">
+              <div className="grid grid-cols-1 gap-2 max-w-xs w-full">
                 {[
                   'トラブルシューティングの方法は？',
                   '効率低下の原因を教えてください',
@@ -276,7 +281,7 @@ export default function AIChatbot() {
                   <button
                     key={q}
                     onClick={() => setInput(q)}
-                    className="text-xs text-left px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-slate-600"
+                    className="text-xs text-left px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-rose-300 hover:bg-rose-50 transition-all text-gray-600 font-medium"
                   >
                     {q}
                   </button>
@@ -286,40 +291,40 @@ export default function AIChatbot() {
           )}
 
           {conversation.map((msg, idx) => (
-            <div key={idx} className={clsx('flex gap-3', msg.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
+            <div key={idx} className={clsx('flex gap-3 items-end', msg.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
               <div className={clsx(
-                'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                msg.role === 'user' ? 'bg-red-600' : 'bg-white border border-gray-200'
+                'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0',
+                msg.role === 'user' ? 'bg-rose-600' : 'bg-white border border-gray-200 shadow-sm'
               )}>
                 {msg.role === 'user' ? (
                   <span className="text-white text-xs font-bold">You</span>
                 ) : (
-                  <Bot size={14} className="text-red-600" />
+                  <Bot size={14} className="text-rose-600" />
                 )}
               </div>
 
-              <div className={clsx('max-w-xl', msg.role === 'user' ? 'items-end' : 'items-start', 'flex flex-col gap-1')}>
+              <div className={clsx('max-w-xl flex flex-col gap-1.5', msg.role === 'user' ? 'items-end' : 'items-start')}>
                 <div className={clsx(
                   'px-4 py-3 rounded-2xl text-sm shadow-sm leading-relaxed',
                   msg.role === 'user'
-                    ? 'bg-red-600 text-white rounded-tr-sm'
-                    : 'bg-white text-slate-700 rounded-tl-sm border border-gray-100'
+                    ? 'bg-rose-600 text-white rounded-br-sm'
+                    : 'bg-white text-gray-700 rounded-bl-sm border border-gray-100'
                 )}>
                   <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
                 </div>
 
                 {msg.sources && msg.sources.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <span className="text-xs text-slate-400">参照:</span>
+                  <div className="flex flex-wrap gap-1.5 mt-0.5">
+                    <span className="text-xs text-gray-400">参照:</span>
                     {msg.sources.map((s, i) => (
-                      <span key={i} className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded">
+                      <span key={i} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-lg font-medium">
                         {s}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-gray-400">
                   {msg.timestamp.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -327,15 +332,15 @@ export default function AIChatbot() {
           ))}
 
           {loading && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-                <Bot size={14} className="text-red-600" />
+            <div className="flex gap-3 items-end">
+              <div className="w-8 h-8 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center flex-shrink-0">
+                <Bot size={14} className="text-rose-600" />
               </div>
-              <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             </div>
@@ -347,8 +352,8 @@ export default function AIChatbot() {
         {/* Input */}
         <div className="bg-white border-t border-gray-100 p-4">
           {selectedDocIds.length > 0 && (
-            <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
-              <FileText size={12} />
+            <div className="flex items-center gap-2 mb-2 text-xs text-gray-400">
+              <FileText size={11} />
               <span>{selectedDocIds.length}件のドキュメントを参照してAIが回答します</span>
             </div>
           )}
@@ -359,17 +364,17 @@ export default function AIChatbot() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={2}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none transition-colors"
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || loading}
-              className="px-4 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end py-2.5"
+              className="px-4 bg-rose-600 text-white rounded-xl hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all self-end py-2.5 shadow-sm shadow-rose-200"
             >
               {loading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
             </button>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Enterで送信、Shift+Enterで改行</p>
+          <p className="text-xs text-gray-400 mt-2">Enterで送信、Shift+Enterで改行</p>
         </div>
       </div>
     </div>
