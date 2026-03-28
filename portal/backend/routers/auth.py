@@ -13,7 +13,7 @@ import base64
 import json
 import time
 
-from passlib.context import CryptContext
+import os
 
 from database import get_db, User
 
@@ -23,7 +23,6 @@ SECRET_KEY = "compressor-portal-secret-key-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # In-memory OTP store (for local dev)
@@ -101,12 +100,21 @@ def decode_access_token(token: str) -> dict:
         raise ValueError(f"Token decode failed: {e}")
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
-
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    salt = os.urandom(16).hex()
+    digest = hashlib.sha256(f"{salt}{plain}".encode()).hexdigest()
+    return f"{salt}${digest}"
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        salt, digest = hashed.split("$", 1)
+        return hmac.compare_digest(
+            hashlib.sha256(f"{salt}{plain}".encode()).hexdigest(),
+            digest,
+        )
+    except Exception:
+        return False
 
 
 async def get_current_user(
